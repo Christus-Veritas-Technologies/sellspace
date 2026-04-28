@@ -5,7 +5,7 @@ import "@fontsource-variable/dm-sans";
 import type { Metadata } from "next";
 
 import "../index.css";
-import Header from "@/components/header";
+import SiteHeader from "@/components/header";
 import Providers from "@/components/providers";
 
 export const metadata: Metadata = {
@@ -22,10 +22,8 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className="antialiased">
         <Providers>
-          <div className="grid grid-rows-[auto_1fr] h-svh">
-            <Header />
+            <SiteHeader />
             {children}
-          </div>
         </Providers>
       </body>
     </html>
