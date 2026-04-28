@@ -1,23 +1,16 @@
+import "@fontsource/fraunces/400.css";
+import "@fontsource/fraunces/600.css";
+import "@fontsource/fraunces/700.css";
+import "@fontsource-variable/dm-sans";
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 
 import "../index.css";
 import Header from "@/components/header";
 import Providers from "@/components/providers";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
 export const metadata: Metadata = {
-  title: "sellspace",
-  description: "sellspace",
+  title: "Sellspace — Zimbabwe's marketplace built on trust",
+  description: "Buy and sell anything in Zimbabwe. Sellspace is a modern, peer-to-peer marketplace.",
 };
 
 export default function RootLayout({
@@ -27,7 +20,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body className="antialiased">
         <Providers>
           <div className="grid grid-rows-[auto_1fr] h-svh">
             <Header />
