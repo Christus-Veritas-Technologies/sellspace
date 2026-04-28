@@ -34,14 +34,24 @@
   "dependencies": {
     "@expo-google-fonts/dm-sans": "^0.4.2",
     "@expo-google-fonts/fraunces": "^0.4.1",
+    "@fontsource-variable/dm-sans": "^5.2.8",
+    "@fontsource/fraunces": "^5.2.9",
+    "@hono/zod-validator": "^0.7.6",
     "@sellspace/env": "workspace:*",
+    "@tanstack/react-query": "^5.100.6",
+    "bcryptjs": "^3.0.3",
     "dotenv": "catalog:",
     "expo-splash-screen": "^55.0.19",
+    "hugeicons-react": "^0.4.0",
+    "jose": "^6.2.3",
+    "nodemailer": "^8.0.7",
     "zod": "catalog:"
   },
   "devDependencies": {
     "@sellspace/config": "workspace:*",
+    "@types/bcryptjs": "^3.0.0",
     "@types/bun": "catalog:",
+    "@types/nodemailer": "^8.0.0",
     "turbo": "^2.8.12",
     "typescript": "^6"
   },
