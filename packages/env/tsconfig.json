@@ -1,0 +1,3 @@
+{
+  "extends": "@sellspace/config/tsconfig.base.json"
+}

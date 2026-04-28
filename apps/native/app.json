@@ -1,0 +1,17 @@
+{
+  "expo": {
+    "scheme": "sellspace",
+    "userInterfaceStyle": "automatic",
+    "orientation": "default",
+    "web": {
+      "bundler": "metro"
+    },
+    "name": "sellspace",
+    "slug": "sellspace",
+    "plugins": ["expo-font"],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
+  }
+}

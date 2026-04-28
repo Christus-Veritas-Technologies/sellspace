@@ -1,0 +1,46 @@
+{
+  "name": "sellspace",
+  "private": true,
+  "workspaces": {
+    "packages": [
+      "apps/*",
+      "packages/*"
+    ],
+    "catalog": {
+      "dotenv": "^17.2.2",
+      "zod": "^4.1.13",
+      "@types/bun": "^1.3.4",
+      "lucide-react": "^0.546.0",
+      "next-themes": "^0.4.6",
+      "sonner": "^2.0.5",
+      "@prisma/client": "^7.7.0",
+      "@types/react-dom": "^19.2.3"
+    }
+  },
+  "type": "module",
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "check-types": "turbo check-types",
+    "dev:native": "turbo -F native dev",
+    "dev:web": "turbo -F web dev",
+    "dev:server": "turbo -F server dev",
+    "db:push": "turbo -F @sellspace/db db:push",
+    "db:studio": "turbo -F @sellspace/db db:studio",
+    "db:generate": "turbo -F @sellspace/db db:generate",
+    "db:migrate": "turbo -F @sellspace/db db:migrate",
+    "db:local": "turbo -F @sellspace/db db:local"
+  },
+  "dependencies": {
+    "@sellspace/env": "workspace:*",
+    "dotenv": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@sellspace/config": "workspace:*",
+    "@types/bun": "catalog:",
+    "turbo": "^2.8.12",
+    "typescript": "^6"
+  },
+  "packageManager": "bun@1.3.5"
+}
