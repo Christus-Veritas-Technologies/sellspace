@@ -32,8 +32,11 @@
     "db:local": "turbo -F @sellspace/db db:local"
   },
   "dependencies": {
+    "@expo-google-fonts/dm-sans": "^0.4.2",
+    "@expo-google-fonts/fraunces": "^0.4.1",
     "@sellspace/env": "workspace:*",
     "dotenv": "catalog:",
+    "expo-splash-screen": "^55.0.19",
     "zod": "catalog:"
   },
   "devDependencies": {
