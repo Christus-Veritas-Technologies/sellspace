@@ -28,6 +28,7 @@ export interface ListingSeller {
   displayName: string | null;
   city: string | null;
   avatarUrl: string | null;
+  createdAt?: string;
 }
 
 export interface Listing {
@@ -40,6 +41,7 @@ export interface Listing {
   category: Category;
   city: string | null;
   sold: boolean;
+  views: number;
   createdAt: string;
   updatedAt: string;
   images: ListingImage[];
