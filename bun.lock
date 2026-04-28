@@ -158,6 +158,7 @@
         "@base-ui/react": "^1.0.0",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
+        "hugeicons-react": "^0.4.0",
         "lucide-react": "catalog:",
         "next-themes": "catalog:",
         "react": "^19.2.3",
