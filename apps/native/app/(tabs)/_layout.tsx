@@ -1,10 +1,17 @@
-import { colors, shadows } from "@sellspace/ui/theme";
-import { Add01Icon } from "@hugeicons/react-native";
+import {
+  Add01Icon,
+  GridIcon,
+  Home01Icon,
+  Message01Icon,
+  UserIcon,
+} from "@hugeicons/core-free-icons";
+import type { IconSvgElement } from "@hugeicons/react-native";
+import { HugeiconsIcon } from "@hugeicons/react-native";
 import { Tabs } from "expo-router";
 import { Pressable, View } from "react-native";
 import type { BottomTabBarButtonProps } from "@react-navigation/bottom-tabs";
 
-import { GridIcon, Home01Icon, MessageIcon, UserIcon } from "@hugeicons/react-native";
+import { colors, shadows } from "@sellspace/ui/theme";
 
 // ─── Sell FAB button (center tab) ─────────────────────────────────────────────
 
@@ -31,7 +38,7 @@ function SellFabButton({ onPress }: BottomTabBarButtonProps) {
           justifyContent: "center",
         }}
       >
-        <Add01Icon size={24} color={colors.accentForeground} />
+        <HugeiconsIcon icon={Add01Icon} size={24} color={colors.accentForeground} />
       </View>
     </Pressable>
   );
@@ -39,12 +46,10 @@ function SellFabButton({ onPress }: BottomTabBarButtonProps) {
 
 // ─── Tab bar icon helper ───────────────────────────────────────────────────────
 
-function tabIcon(
-  IconComponent: React.ComponentType<{ size: number; color: string }>,
-  focused: boolean,
-) {
+function tabIcon(icon: IconSvgElement, focused: boolean) {
   return (
-    <IconComponent
+    <HugeiconsIcon
+      icon={icon}
       size={22}
       color={focused ? colors.accent : colors.textMuted}
     />
@@ -99,7 +104,7 @@ export default function TabsLayout() {
         name="inbox"
         options={{
           title: "Inbox",
-          tabBarIcon: ({ focused }) => tabIcon(MessageIcon, focused),
+          tabBarIcon: ({ focused }) => tabIcon(Message01Icon, focused),
         }}
       />
       <Tabs.Screen

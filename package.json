@@ -37,6 +37,7 @@
     "@fontsource-variable/dm-sans": "^5.2.8",
     "@fontsource/fraunces": "^5.2.9",
     "@hono/zod-validator": "^0.7.6",
+    "@hugeicons/core-free-icons": "^4.1.1",
     "@sellspace/env": "workspace:*",
     "@tanstack/react-query": "^5.100.6",
     "bcryptjs": "^3.0.3",
