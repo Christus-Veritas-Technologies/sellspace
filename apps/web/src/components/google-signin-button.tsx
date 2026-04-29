@@ -14,7 +14,16 @@ export function GoogleSignInButton() {
 
   const mutation = useMutation({
     mutationFn: (idToken: string) => authClient.callbackGoogle(idToken),
-    onSuccess: async () => {
+    onSuccess: async (data) => {
+      // Store tokens in httpOnly cookies via the session API route
+      await fetch("/api/auth/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          accessToken: data.accessToken,
+          refreshToken: data.refreshToken,
+        }),
+      });
       const redirect = searchParams.get("redirect") ?? "/";
       router.replace(redirect);
     },
