@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTransition } from "react";
 
@@ -60,6 +62,18 @@ export function FilterSidebar() {
   return (
     <aside className="w-[220px] shrink-0">
       <div className="bg-white rounded-[14px] border border-[#E2E2DC] p-5 shadow-[0_1px_3px_rgba(26,26,24,0.06)] sticky top-6">
+
+        {/* Branding */}
+        <Link href="/" className="flex items-center justify-center mb-4 group">
+          <Image
+            src="/favicon.png"
+            alt="Sellspace"
+            width={32}
+            height={32}
+            className="rounded-lg group-hover:opacity-80 transition-opacity"
+          />
+        </Link>
+        <div className="h-px bg-[#E2E2DC] mb-4" />
 
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-[15px] font-[700] text-[#1A1A18]" style={{ fontFamily: "'Fraunces', serif" }}>
