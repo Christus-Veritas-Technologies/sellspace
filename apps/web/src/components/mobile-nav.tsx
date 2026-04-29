@@ -7,6 +7,7 @@ import {
   Message01Icon,
   UserIcon,
 } from "hugeicons-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -68,24 +69,19 @@ export function MobileNav() {
         ].join(" ")}
       >
         {/* Panel header */}
-        <div className="h-16 bg-[#0D3B2E] px-5 flex items-center justify-between shrink-0">
+        <div className="h-16 bg-[#0D3B2E] px-4 flex items-center justify-between shrink-0">
           <Link
             href="/"
             onClick={() => setOpen(false)}
-            className="text-[22px] leading-none"
+            className="flex items-center gap-2"
           >
-            <span
-              style={{ fontFamily: "'Fraunces', Georgia, serif", fontWeight: 700 }}
-              className="text-[#FAFAF8]"
-            >
-              sell
-            </span>
-            <span
-              style={{ fontFamily: "'Fraunces', Georgia, serif", fontWeight: 700 }}
-              className="text-[#E8621A]"
-            >
-              space
-            </span>
+            <Image
+              src="/favicon.png"
+              alt="Sellspace"
+              width={32}
+              height={32}
+              className="rounded-full"
+            />
           </Link>
           <button
             onClick={() => setOpen(false)}

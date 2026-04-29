@@ -3,6 +3,7 @@ import {
   Message01Icon,
   UserIcon,
 } from "hugeicons-react";
+import Image from "next/image";
 import Link from "next/link";
 
 import { HeaderSearchBar } from "./header-search-bar";
@@ -26,20 +27,21 @@ export default function SiteHeader() {
   return (
     <header>
       {/* ── Top bar ─────────────────────────────────── */}
-      <div className="h-16 bg-[#0D3B2E] px-5 md:px-10 flex items-center gap-6">
+      <div className="h-16 bg-[#0D3B2E] px-5 md:px-10 flex items-center gap-4 md:gap-6">
         {/* Logo */}
-        <Link href="/" className="shrink-0 text-[24px] leading-none">
+        <Link href="/" className="shrink-0 flex items-center gap-2 hover:opacity-80 transition-opacity">
+          <Image
+            src="/favicon.png"
+            alt="Sellspace"
+            width={40}
+            height={40}
+            className="rounded-full"
+          />
           <span
             style={{ fontFamily: "'Fraunces', Georgia, serif", fontWeight: 700 }}
-            className="text-[#FAFAF8]"
+            className="hidden sm:inline text-[18px] leading-none text-[#FAFAF8]"
           >
-            sell
-          </span>
-          <span
-            style={{ fontFamily: "'Fraunces', Georgia, serif", fontWeight: 700 }}
-            className="text-[#E8621A]"
-          >
-            space
+            sell<span className="text-[#E8621A]">space</span>
           </span>
         </Link>
 
