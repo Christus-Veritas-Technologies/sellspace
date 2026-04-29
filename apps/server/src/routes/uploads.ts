@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { zValidator } from "@hono/zod-validator";
 
-import { db } from "@sellspace/db";
+import db from "@sellspace/db";
 import { requireAuth } from "@/middleware/auth";
 import { deleteFromR2, generateR2Key, uploadToR2, validateFileSize, validateMimeType } from "@/lib/r2";
 
