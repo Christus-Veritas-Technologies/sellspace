@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --port 3001",
+    "dev": "next dev --port 9998",
     "build": "next build",
-    "start": "next start"
+    "start": "PORT=9998 next start"
   },
   "dependencies": {
     "@prisma/client": "catalog:",
