@@ -1,8 +1,10 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
+import * as ImagePicker from "expo-image-picker";
 import { useState } from "react";
 import {
   Alert,
+  Image,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -16,6 +18,7 @@ import {
 
 import { colors, radii, shadows, spacing } from "@sellspace/ui/theme";
 import { listingsApi } from "@/lib/listings";
+import { uploadListingImagesNative } from "@/lib/uploads";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -148,52 +151,12 @@ function CategoryPicker({
   );
 }
 
-// ─── Image URL row ────────────────────────────────────────────────────────────
+// ─── Image picker and display ────────────────────────────────────────────────
 
-function ImageUrlRow({
-  index,
-  url,
-  onChange,
-  onRemove,
-  canRemove,
-}: {
-  index: number;
-  url: string;
-  onChange: (v: string) => void;
-  onRemove: () => void;
-  canRemove: boolean;
-}) {
-  return (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 }}>
-      <TextInput
-        value={url}
-        onChangeText={onChange}
-        placeholder={`Image URL ${index + 1}`}
-        placeholderTextColor={colors.textMuted}
-        keyboardType="url"
-        autoCapitalize="none"
-        autoCorrect={false}
-        style={{ ...inputStyle, flex: 1, fontSize: 13, paddingVertical: 10 }}
-      />
-      {canRemove && (
-        <Pressable
-          onPress={onRemove}
-          style={{
-            width: 36,
-            height: 36,
-            borderRadius: radii.md,
-            backgroundColor: colors.surface2,
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Text style={{ fontFamily: "DMSans_700Bold", fontSize: 18, color: colors.textMuted, lineHeight: 20 }}>
-            ×
-          </Text>
-        </Pressable>
-      )}
-    </View>
-  );
+interface PickedImage {
+  uri: string;
+  name: string;
+  type: string;
 }
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
@@ -208,49 +171,77 @@ export default function SellScreen() {
   const [condition, setCondition] = useState("LIKE_NEW");
   const [category, setCategory] = useState("ELECTRONICS");
   const [city, setCity] = useState("");
-  const [imageUrls, setImageUrls] = useState<string[]>(["", ""]);
+  const [images, setImages] = useState<PickedImage[]>([]);
   const [categoryPickerOpen, setCategoryPickerOpen] = useState(false);
+  const [error, setError] = useState("");
 
   const categoryLabel = CATEGORIES.find((c) => c.value === category)?.label ?? category;
 
-  function updateImageUrl(i: number, value: string) {
-    const next = [...imageUrls];
-    next[i] = value;
-    setImageUrls(next);
+  async function pickImages() {
+    if (images.length >= 10) {
+      setError("Maximum 10 images");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsMultiple: true,
+      aspect: [4, 3],
+      quality: 0.8,
+      selectionLimit: 10 - images.length,
+    });
+
+    if (!result.canceled) {
+      const newImages: PickedImage[] = result.assets.map((asset) => ({
+        uri: asset.uri,
+        name: asset.uri.split("/").pop() || `image-${Date.now()}.jpg`,
+        type: asset.type === "video" ? "video/mp4" : "image/jpeg",
+      }));
+
+      setImages((prev) => [...prev, ...newImages]);
+      setError("");
+    }
   }
 
-  function addImageRow() {
-    if (imageUrls.length >= 10) return;
-    setImageUrls((prev) => [...prev, ""]);
-  }
-
-  function removeImageRow(i: number) {
-    setImageUrls((prev) => prev.filter((_, idx) => idx !== i));
+  function removeImage(i: number) {
+    setImages((prev) => prev.filter((_, idx) => idx !== i));
   }
 
   const mutation = useMutation({
-    mutationFn: () => {
-      const validUrls = imageUrls.map((u) => u.trim()).filter(Boolean);
+    mutationFn: async () => {
+      const validImages = images.filter((img) => img.type?.startsWith("image/"));
       const cents = Math.round(parseFloat(price) * 100);
 
       if (title.trim().length < 3) throw new Error("Title must be at least 3 characters.");
       if (description.trim().length < 10) throw new Error("Description must be at least 10 characters.");
       if (isNaN(cents) || cents < 1) throw new Error("Enter a valid price.");
-      if (validUrls.length < 1) throw new Error("Add at least one image URL.");
+      if (validImages.length < 1) throw new Error("Add at least one image.");
 
-      return listingsApi.createListing({
+      // Create listing first
+      const listing = await listingsApi.createListing({
         title: title.trim(),
         description: description.trim(),
         price: cents,
         condition,
         category,
         city: city.trim() || undefined,
-        imageUrls: validUrls,
+        imageUrls: [], // Empty, will upload separately
       });
+
+      // Upload images
+      if (validImages.length > 0) {
+        await uploadListingImagesNative(
+          listing.id,
+          validImages.map((img) => img.uri),
+          validImages.map((img) => img.name),
+        );
+      }
+
+      return listing;
     },
-    onSuccess: (data) => {
+    onSuccess: (listing) => {
       queryClient.invalidateQueries({ queryKey: ["listings"] });
-      router.push(`/listings/${data.id}` as never);
+      router.push(`/listings/${listing.id}` as never);
     },
     onError: (err: Error) => {
       Alert.alert("Error", err.message);
@@ -397,44 +388,111 @@ export default function SellScreen() {
             style={{ ...inputStyle, marginBottom: spacing[4] }}
           />
 
-          {/* ── Image URLs ──────────────────────────────────────────── */}
+          {/* ── Images ──────────────────────────────────────────────────── */}
           <Text style={labelStyle}>
             Images <Text style={{ color: colors.accent }}>*</Text>
             <Text style={{ fontFamily: "DMSans_400Regular", color: colors.textMuted }}>
-              {" "}(paste direct image URLs, min 1 max 10)
+              {" "}>({images.length}/10)
             </Text>
           </Text>
 
-          {imageUrls.map((url, i) => (
-            <ImageUrlRow
-              key={i}
-              index={i}
-              url={url}
-              onChange={(v) => updateImageUrl(i, v)}
-              onRemove={() => removeImageRow(i)}
-              canRemove={imageUrls.length > 1}
-            />
-          ))}
-
-          {imageUrls.length < 10 && (
-            <Pressable
-              onPress={addImageRow}
+          {/* Image grid display */}
+          {images.length > 0 && (
+            <View
               style={{
-                paddingVertical: 10,
-                borderRadius: radii.md,
-                borderWidth: 1,
-                borderColor: colors.border,
-                borderStyle: "dashed",
-                alignItems: "center",
-                marginBottom: spacing[6],
-                marginTop: 4,
+                flexDirection: "row",
+                flexWrap: "wrap",
+                gap: 8,
+                marginBottom: spacing[4],
               }}
             >
-              <Text style={{ fontFamily: "DMSans_500Medium", fontSize: 13, color: colors.textMuted }}>
-                + Add another image
-              </Text>
-            </Pressable>
+              {images.map((img, i) => (
+                <View key={i} style={{ position: "relative", width: "48%", aspectRatio: 1 }}>
+                  <Image
+                    source={{ uri: img.uri }}
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      borderRadius: radii.md,
+                      backgroundColor: colors.surface,
+                    }}
+                  />
+                  {i === 0 && (
+                    <View
+                      style={{
+                        position: "absolute",
+                        top: 4,
+                        left: 4,
+                        backgroundColor: colors.accent,
+                        paddingHorizontal: 6,
+                        paddingVertical: 2,
+                        borderRadius: radii.sm,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontFamily: "DMSans_600SemiBold",
+                          fontSize: 10,
+                          color: "#FFFFFF",
+                        }}
+                      >
+                        Primary
+                      </Text>
+                    </View>
+                  )}
+                  <Pressable
+                    onPress={() => removeImage(i)}
+                    style={{
+                      position: "absolute",
+                      bottom: 4,
+                      right: 4,
+                      width: 32,
+                      height: 32,
+                      borderRadius: 16,
+                      backgroundColor: "rgba(0,0,0,0.6)",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Text style={{ fontSize: 18, color: "#FFFFFF" }}>✕</Text>
+                  </Pressable>
+                </View>
+              ))}
+            </View>
           )}
+
+          {/* Error message */}
+          {error && (
+            <Text style={{ color: colors.accent, marginBottom: spacing[3], fontSize: 13 }}>
+              {error}
+            </Text>
+          )}
+
+          {/* Select images button */}
+          <Pressable
+            onPress={pickImages}
+            disabled={images.length >= 10}
+            style={{
+              paddingVertical: 12,
+              borderRadius: radii.md,
+              borderWidth: 1.5,
+              borderColor: images.length >= 10 ? colors.border : colors.primary,
+              borderStyle: "dashed",
+              alignItems: "center",
+              marginBottom: spacing[6],
+              opacity: images.length >= 10 ? 0.5 : 1,
+            }}
+          >
+            <Text
+              style={{
+                fontFamily: "DMSans_600SemiBold",
+                fontSize: 14,
+                color: images.length >= 10 ? colors.textMuted : colors.primary,
+              }}
+            >
+              {images.length === 0 ? "📸 Select Images" : "+ Add More"}
+            </Text>
+          </Pressable>
 
           {/* ── Submit ──────────────────────────────────────────────── */}
           <Pressable
