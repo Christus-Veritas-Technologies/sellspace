@@ -17,6 +17,7 @@ export function Footer() {
                 alt="Sellspace"
                 width={40}
                 height={40}
+                unoptimized
                 className="rounded-full"
               />
               <span

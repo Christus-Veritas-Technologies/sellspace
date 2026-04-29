@@ -70,6 +70,7 @@ export function FilterSidebar() {
             alt="Sellspace"
             width={32}
             height={32}
+            unoptimized
             className="rounded-lg group-hover:opacity-80 transition-opacity"
           />
         </Link>

@@ -79,8 +79,7 @@ export function MobileNav() {
               src="/favicon.png"
               alt="Sellspace"
               width={32}
-              height={32}
-              className="rounded-full"
+              height={32}              unoptimized              className="rounded-full"
             />
           </Link>
           <button
