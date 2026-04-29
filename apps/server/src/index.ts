@@ -12,6 +12,7 @@ import { reportRoutes } from "./routes/reports";
 import { reviewRoutes } from "./routes/reviews";
 import { savedRoutes } from "./routes/saved";
 import { userRoutes } from "./routes/users";
+import { uploadRoutes } from "./routes/uploads";
 import { websocket, wsRoutes } from "./routes/ws";
 
 const app = new Hono();
@@ -38,6 +39,7 @@ app.route("/api/notifications", notificationRoutes);
 app.route("/api/reports", reportRoutes);
 app.route("/api/saved", savedRoutes);
 app.route("/api/reviews", reviewRoutes);
+app.route("/api/uploads", uploadRoutes);
 
 // ─── WebSocket ────────────────────────────────────────────────────────────────
 

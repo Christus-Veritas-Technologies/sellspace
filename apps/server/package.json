@@ -10,6 +10,7 @@
     "start": "bun run dist/index.mjs"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.605.0",
     "@sellspace/db": "workspace:*",
     "@sellspace/env": "workspace:*",
     "dotenv": "catalog:",
