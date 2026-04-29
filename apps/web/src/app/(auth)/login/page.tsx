@@ -1,12 +1,13 @@
 "use client";
 
+import { Suspense } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 import { authClient } from "@/lib/auth-client";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
@@ -18,7 +19,7 @@ export default function LoginPage() {
       const redirect = searchParams.get("redirect") ?? "";
       const params = new URLSearchParams({ email });
       if (redirect) params.set("redirect", redirect);
-      router.push(`/auth/verify?${params.toString()}`);
+      router.push(`/auth/verify?${params.toString()}` as never);
     },
     onError: (err: Error) => {
       setInputError(err.message);
@@ -96,3 +97,12 @@ export default function LoginPage() {
     </>
   );
 }
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
+  );
+}
+

@@ -1,15 +1,15 @@
 import {
-  BriefcaseIcon,
+  Briefcase09Icon,
   Car01Icon,
-  Cpu01Icon,
+  CpuIcon,
   FlowerIcon,
-  Football01Icon,
+  FootballIcon,
   GridIcon,
   Leaf01Icon,
   SmartPhone01Icon,
-  SofaIcon,
+  Sofa03Icon,
   TShirtIcon,
-  UtensilsIcon,
+  KitchenUtensilsIcon,
 } from "hugeicons-react";
 
 import { ListingCard } from "@sellspace/ui/components/listing-card";
@@ -20,16 +20,16 @@ import { listingsClient } from "@/lib/listings";
 
 const CATEGORIES = [
   { label: "All", href: "/", icon: GridIcon, value: null },
-  { label: "Electronics", href: "/?category=ELECTRONICS", icon: Cpu01Icon, value: "ELECTRONICS" },
+  { label: "Electronics", href: "/?category=ELECTRONICS", icon: CpuIcon, value: "ELECTRONICS" },
   { label: "Phones", href: "/?category=PHONES_TABLETS", icon: SmartPhone01Icon, value: "PHONES_TABLETS" },
   { label: "Vehicles", href: "/?category=VEHICLES", icon: Car01Icon, value: "VEHICLES" },
-  { label: "Furniture", href: "/?category=FURNITURE", icon: SofaIcon, value: "FURNITURE" },
+  { label: "Furniture", href: "/?category=FURNITURE", icon: Sofa03Icon, value: "FURNITURE" },
   { label: "Clothing", href: "/?category=CLOTHING", icon: TShirtIcon, value: "CLOTHING" },
-  { label: "Sports", href: "/?category=SPORTS_OUTDOORS", icon: Football01Icon, value: "SPORTS_OUTDOORS" },
+  { label: "Sports", href: "/?category=SPORTS_OUTDOORS", icon: FootballIcon, value: "SPORTS_OUTDOORS" },
   { label: "Home & Garden", href: "/?category=HOME_GARDEN", icon: FlowerIcon, value: "HOME_GARDEN" },
   { label: "Books", href: "/?category=BOOKS_EDUCATION", icon: Leaf01Icon, value: "BOOKS_EDUCATION" },
-  { label: "Food & Drink", href: "/?category=FOOD_BEVERAGES", icon: UtensilsIcon, value: "FOOD_BEVERAGES" },
-  { label: "Services", href: "/?category=SERVICES", icon: BriefcaseIcon, value: "SERVICES" },
+  { label: "Food & Drink", href: "/?category=FOOD_BEVERAGES", icon: KitchenUtensilsIcon, value: "FOOD_BEVERAGES" },
+  { label: "Services", href: "/?category=SERVICES", icon: Briefcase09Icon, value: "SERVICES" },
 ] as const;
 
 // ─── Page ─────────────────────────────────────────────────────────────────────

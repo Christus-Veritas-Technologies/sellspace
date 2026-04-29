@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useRef, useState } from "react";
@@ -8,7 +9,7 @@ import { authClient } from "@/lib/auth-client";
 
 const OTP_LENGTH = 6;
 
-export default function VerifyPage() {
+function VerifyForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const email = searchParams.get("email") ?? "";
@@ -144,5 +145,13 @@ export default function VerifyPage() {
         </span>
       </button>
     </>
+  );
+}
+
+export default function VerifyPage() {
+  return (
+    <Suspense>
+      <VerifyForm />
+    </Suspense>
   );
 }

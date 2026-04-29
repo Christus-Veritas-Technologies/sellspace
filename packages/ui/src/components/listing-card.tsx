@@ -1,4 +1,4 @@
-import { BookmarkIcon } from "hugeicons-react";
+import { Bookmark03Icon } from "hugeicons-react";
 import * as React from "react";
 
 import { cn } from "@sellspace/ui/lib/utils";
@@ -94,7 +94,7 @@ export function ListingCard({
                      backdrop-blur-sm flex items-center justify-center
                      hover:bg-white transition-colors z-10"
         >
-          <BookmarkIcon
+          <Bookmark03Icon
             size={16}
             color={saved ? "#E8621A" : "#8A8A82"}
             fill={saved ? "#E8621A" : "none"}
