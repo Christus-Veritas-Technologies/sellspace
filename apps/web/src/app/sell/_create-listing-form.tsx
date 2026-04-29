@@ -1,6 +1,7 @@
 "use client";
 
-import { useTransition, useState } from "react";
+import { useRef, useTransition, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { createListing } from "./_actions";
 
@@ -48,37 +49,55 @@ const selectCls =
 // ─── Create listing form ──────────────────────────────────────────────────────
 
 export function CreateListingForm() {
+  const router = useRouter();
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
   const [condition, setCondition] = useState("LIKE_NEW");
   const [category, setCategory] = useState("ELECTRONICS");
   const [city, setCity] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
-  const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [pending, startTransition] = useTransition();
 
-  function addImage() {
-    const url = imageUrl.trim();
-    if (!url) return;
-    try {
-      new URL(url);
-    } catch {
-      setErrors((e) => ({ ...e, imageUrl: "Must be a valid URL." }));
+  function handleImageFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.currentTarget.files || []);
+    if (files.length === 0) return;
+
+    // Validate total images
+    if (selectedFiles.length + files.length > 10) {
+      setErrors((e) => ({ ...e, imageUrl: "Maximum 10 images" }));
       return;
     }
-    if (imageUrls.length >= 10) {
-      setErrors((e) => ({ ...e, imageUrl: "Maximum 10 images." }));
-      return;
+
+    // Validate each file
+    for (const file of files) {
+      if (file.size > 5242880) {
+        setErrors((e) => ({ ...e, imageUrl: "Each image must be under 5MB" }));
+        return;
+      }
+      if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+        setErrors((e) => ({ ...e, imageUrl: "Only JPEG, PNG, WebP allowed" }));
+        return;
+      }
     }
-    setImageUrls((prev) => [...prev, url]);
-    setImageUrl("");
+
+    // Create preview URLs
+    const newPreviews = files.map((f) => URL.createObjectURL(f));
+    setSelectedFiles((prev) => [...prev, ...files]);
+    setImagePreviewUrls((prev) => [...prev, ...newPreviews]);
     setErrors((e) => ({ ...e, imageUrl: "" }));
   }
 
   function removeImage(i: number) {
-    setImageUrls((prev) => prev.filter((_, idx) => idx !== i));
+    setSelectedFiles((prev) => prev.filter((_, idx) => idx !== i));
+    setImagePreviewUrls((prev) => {
+      prev[i] && URL.revokeObjectURL(prev[i]);
+      return prev.filter((_, idx) => idx !== i);
+    });
   }
 
   function validate() {
@@ -87,7 +106,7 @@ export function CreateListingForm() {
     if (description.trim().length < 10) errs.description = "Description must be at least 10 characters.";
     const cents = Math.round(parseFloat(price) * 100);
     if (!price || isNaN(cents) || cents < 1) errs.price = "Enter a valid price.";
-    if (imageUrls.length < 1) errs.imageUrl = "Add at least one image URL.";
+    if (selectedFiles.length < 1) errs.imageUrl = "Add at least one image.";
     return errs;
   }
 
@@ -104,15 +123,17 @@ export function CreateListingForm() {
 
     startTransition(async () => {
       try {
-        await createListing({
+        const listing = await createListing({
           title: title.trim(),
           description: description.trim(),
           price: cents,
           condition,
           category,
           city: city.trim() || undefined,
-          imageUrls,
+          files: selectedFiles,
         });
+        // Navigate to listing detail page which will handle image upload
+        router.push(`/listings/${listing.id}`);
       } catch (err) {
         setErrors({ form: (err as Error).message });
       }
@@ -206,36 +227,42 @@ export function CreateListingForm() {
         />
       </div>
 
-      {/* Image URLs */}
+      {/* Images */}
       <div>
         <Label required>Images</Label>
-        <p className="text-[12px] text-[#8A8A82] mb-2">Paste a direct image URL (e.g. from Imgur or Cloudinary). Up to 10.</p>
+        <p className="text-[12px] text-[#8A8A82] mb-2">Upload up to 10 images. Max 5MB each. Formats: JPEG, PNG, WebP.</p>
 
-        <div className="flex gap-2 mb-3">
-          <input
-            type="url"
-            value={imageUrl}
-            onChange={(e) => setImageUrl(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addImage(); }}}
-            placeholder="https://example.com/image.jpg"
-            disabled={pending}
-            className="flex-1 h-11 px-4 rounded-[10px] border border-[#E2E2DC] bg-[#F2F2EF] text-[14px] text-[#1A1A18] focus:outline-none focus:border-[#E8621A] disabled:opacity-60"
-          />
+        {/* Hidden file input */}
+        <input
+          ref={imageInputRef}
+          type="file"
+          multiple
+          accept="image/jpeg,image/png,image/webp"
+          onChange={handleImageFileChange}
+          disabled={pending || selectedFiles.length >= 10}
+          className="hidden"
+        />
+
+        {/* Upload button */}
+        {selectedFiles.length < 10 && (
           <button
             type="button"
-            onClick={addImage}
+            onClick={() => imageInputRef.current?.click()}
             disabled={pending}
-            className="h-11 px-4 rounded-[10px] border border-[#E2E2DC] bg-white text-[14px] font-[600] text-[#1A1A18] hover:bg-[#F2F2EF] transition-colors disabled:opacity-60"
+            className="w-full h-11 px-4 rounded-[10px] border-2 border-dashed border-[#E2E2DC] 
+                       bg-[#FAFAF8] text-[14px] font-[600] text-[#1A1A18] hover:bg-[#F2F2EF] 
+                       transition-colors disabled:opacity-60 mb-3"
           >
-            Add
+            📁 Select images ({selectedFiles.length}/10)
           </button>
-        </div>
+        )}
 
         {errors.imageUrl && <p className="text-[12px] text-[#DC2626] mb-2">{errors.imageUrl}</p>}
 
-        {imageUrls.length > 0 && (
+        {/* Image grid */}
+        {imagePreviewUrls.length > 0 && (
           <div className="flex flex-wrap gap-2">
-            {imageUrls.map((url, i) => (
+            {imagePreviewUrls.map((url, i) => (
               <div key={i} className="relative w-20 h-20 rounded-[8px] overflow-hidden border border-[#E2E2DC] group">
                 <img src={url} alt="" className="w-full h-full object-cover" />
                 <button
@@ -259,7 +286,7 @@ export function CreateListingForm() {
         className="w-full h-12 rounded-[10px] bg-[#E8621A] text-white text-[15px] font-[700]
                    hover:bg-[#C9521A] transition-colors disabled:opacity-60"
       >
-        {pending ? "Publishing…" : "Publish Listing"}
+        {pending ? "Creating…" : "Create Listing"}
       </button>
     </form>
   );
