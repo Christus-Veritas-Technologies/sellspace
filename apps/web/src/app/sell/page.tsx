@@ -5,7 +5,7 @@ import { CreateListingForm } from "./_create-listing-form";
 export default async function SellPage() {
   const cookieStore = await cookies();
   const token = cookieStore.get("ss_access_token");
-  if (!token) redirect("/auth/login?redirect=/sell");
+  if (!token) redirect("/login?redirect=/sell");
 
   return (
     <main className="min-h-screen bg-[#F2F2EF]">

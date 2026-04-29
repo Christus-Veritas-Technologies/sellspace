@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 
-const PUBLIC_PATHS = ["/", "/auth/login", "/auth/verify", "/auth/logout", "/api/auth", "/search", "/listings"];
+const PUBLIC_PATHS = ["/", "/login", "/verify", "/logout", "/api/auth", "/search", "/listings"];
 
 export function middleware(req: NextRequest): NextResponse {
   const { pathname } = req.nextUrl;
@@ -13,7 +13,7 @@ export function middleware(req: NextRequest): NextResponse {
   const token = req.cookies.get("ss_access_token")?.value;
 
   if (!token) {
-    const loginUrl = new URL("/auth/login", req.url);
+    const loginUrl = new URL("/login", req.url);
     loginUrl.searchParams.set("redirect", pathname);
     return NextResponse.redirect(loginUrl);
   }

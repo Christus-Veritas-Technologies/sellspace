@@ -17,7 +17,7 @@ export default async function ChatPage({
   const cookieStore = await cookies();
   const token = cookieStore.get("ss_access_token")?.value;
 
-  if (!token) redirect("/auth/login");
+  if (!token) redirect("/login");
 
   const headers = { Authorization: `Bearer ${token}` };
 

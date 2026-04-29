@@ -8,7 +8,7 @@ export default function LogoutPage() {
 
   useEffect(() => {
     fetch("/api/auth/session", { method: "DELETE" }).finally(() => {
-      router.replace("/auth/login");
+      router.replace("/login");
     });
   }, [router]);
 

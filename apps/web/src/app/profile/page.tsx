@@ -17,13 +17,13 @@ export default async function ProfilePage() {
   const cookieStore = await cookies();
   const token = cookieStore.get("ss_access_token")?.value;
 
-  if (!token) redirect("/auth/login");
+  if (!token) redirect("/login");
 
   const headers = { Authorization: `Bearer ${token}` };
 
   const res = await fetch(`${BASE}/api/users/me`, { headers, cache: "no-store" });
 
-  if (!res.ok) redirect("/auth/login");
+  if (!res.ok) redirect("/login");
 
   const data = (await res.json()) as {
     user: {
@@ -139,7 +139,7 @@ export default async function ProfilePage() {
         {/* Account actions */}
         <div className="flex justify-end">
           <Link
-            href="/auth/logout"
+            href="/logout"
             className="px-5 py-2.5 rounded-[10px] border border-[#FEE2E2] bg-white text-[#DC2626]
                        text-[14px] font-[600] hover:bg-[#FEE2E2] transition-colors"
           >

@@ -12,7 +12,7 @@ export default async function InboxPage() {
   const token = cookieStore.get("ss_access_token")?.value;
 
   if (!token) {
-    redirect("/auth/login");
+    redirect("/login");
   }
 
   const headers = { Authorization: `Bearer ${token}` };

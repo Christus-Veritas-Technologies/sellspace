@@ -135,7 +135,7 @@ function VerifyForm() {
 
       <button
         type="button"
-        onClick={() => router.push(`/auth/login`)}
+        onClick={() => router.push(`/login`)}
         className="w-full text-sm text-center"
         style={{ color: "var(--ss-text-muted)" }}
       >

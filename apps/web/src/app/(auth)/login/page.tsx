@@ -19,7 +19,7 @@ function LoginForm() {
       const redirect = searchParams.get("redirect") ?? "";
       const params = new URLSearchParams({ email });
       if (redirect) params.set("redirect", redirect);
-      router.push(`/auth/verify?${params.toString()}` as never);
+      router.push(`/verify?${params.toString()}` as never);
     },
     onError: (err: Error) => {
       setInputError(err.message);
