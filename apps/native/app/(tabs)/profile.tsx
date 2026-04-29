@@ -8,11 +8,13 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
+import * as ImagePicker from "expo-image-picker";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Image,
   Modal,
   Pressable,
   SafeAreaView,
@@ -30,10 +32,21 @@ import { getStoredUserId, userApi } from "@/lib/user";
 import type { UpdateProfileBody, UserListingPreview } from "@/lib/user";
 import { reviewsApi } from "@/lib/reviews";
 import type { Review } from "@/lib/reviews";
+import { uploadProfilePictureNative } from "@/lib/uploads";
 
 // ─── Avatar circle ────────────────────────────────────────────────────────────
 
-function AvatarCircle({ name, size = 72 }: { name: string; size?: number }) {
+function AvatarCircle({
+  name,
+  avatarUrl,
+  size = 72,
+  onPress,
+}: {
+  name: string;
+  avatarUrl?: string | null;
+  size?: number;
+  onPress?: () => void;
+}) {
   const initials = name
     .split(" ")
     .slice(0, 2)
@@ -41,27 +54,54 @@ function AvatarCircle({ name, size = 72 }: { name: string; size?: number }) {
     .join("");
 
   return (
-    <View
-      style={{
-        width: size,
-        height: size,
-        borderRadius: size / 2,
-        backgroundColor: colors.primary,
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
-      <Text
+    <Pressable onPress={onPress} style={{ position: "relative" }}>
+      <View
         style={{
-          fontFamily: "Fraunces_700Bold",
-          fontSize: size * 0.38,
-          color: "#FAFAF8",
-          lineHeight: size * 0.44,
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+          backgroundColor: colors.primary,
+          alignItems: "center",
+          justifyContent: "center",
+          overflow: "hidden",
         }}
       >
-        {initials || "?"}
-      </Text>
-    </View>
+        {avatarUrl ? (
+          <Image
+            source={{ uri: avatarUrl }}
+            style={{ width: size, height: size, borderRadius: size / 2 }}
+          />
+        ) : (
+          <Text
+            style={{
+              fontFamily: "Fraunces_700Bold",
+              fontSize: size * 0.38,
+              color: "#FAFAF8",
+              lineHeight: size * 0.44,
+            }}
+          >
+            {initials || "?"}
+          </Text>
+        )}
+      </View>
+      {onPress && (
+        <View
+          style={{
+            position: "absolute",
+            bottom: 0,
+            right: 0,
+            width: size * 0.35,
+            height: size * 0.35,
+            borderRadius: (size * 0.35) / 2,
+            backgroundColor: colors.accent,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Text style={{ fontSize: size * 0.16, color: "#FFFFFF" }}>📷</Text>
+        </View>
+      )}
+    </Pressable>
   );
 }
 
@@ -240,6 +280,7 @@ export default function ProfileScreen() {
   const queryClient = useQueryClient();
   const [userId, setUserId] = useState<string | null>(null);
   const [editOpen, setEditOpen] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
 
   // Load userId from stored JWT on mount
   useEffect(() => {
@@ -281,6 +322,32 @@ export default function ProfileScreen() {
         },
       },
     ]);
+  }
+
+  async function handleAvatarPress() {
+    if (avatarUploading) return;
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+
+    if (result.canceled || !result.assets[0]) return;
+
+    const asset = result.assets[0];
+    const fileName = asset.uri.split("/").pop() ?? `avatar-${Date.now()}.jpg`;
+
+    try {
+      setAvatarUploading(true);
+      await uploadProfilePictureNative(asset.uri, fileName, "image/jpeg");
+      queryClient.invalidateQueries({ queryKey: ["profile", userId] });
+    } catch (err) {
+      Alert.alert("Upload failed", (err as Error).message);
+    } finally {
+      setAvatarUploading(false);
+    }
   }
 
   // ── Loading state ──────────────────────────────────────────────────────────
@@ -385,7 +452,18 @@ export default function ProfileScreen() {
               ...shadows.card,
             }}
           >
-            <AvatarCircle name={user.displayName} />
+            <AvatarCircle
+              name={user.displayName}
+              avatarUrl={user.avatarUrl}
+              onPress={handleAvatarPress}
+            />
+            {avatarUploading && (
+              <ActivityIndicator
+                size="small"
+                color={colors.accent}
+                style={{ marginTop: 8 }}
+              />
+            )}
             <Text
               style={{
                 fontFamily: "Fraunces_700Bold",
