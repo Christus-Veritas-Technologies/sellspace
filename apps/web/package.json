@@ -9,8 +9,10 @@
   },
   "dependencies": {
     "@prisma/client": "catalog:",
+    "@react-oauth/google": "^0.12.1",
     "@sellspace/env": "workspace:*",
     "@sellspace/ui": "workspace:*",
+    "@tanstack/react-query": "^5.64.0",
     "babel-plugin-react-compiler": "^1.0.0",
     "dotenv": "catalog:",
     "lucide-react": "catalog:",

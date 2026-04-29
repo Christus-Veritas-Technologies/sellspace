@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 import { authClient } from "@/lib/auth-client";
+import { GoogleSignInButton } from "@/components/google-signin-button";
 
 function LoginForm() {
   const router = useRouter();
@@ -50,6 +51,8 @@ function LoginForm() {
       <p className="text-sm mb-6" style={{ color: "var(--ss-text-muted)" }}>
         Enter your email and we&apos;ll send you a sign-in code.
       </p>
+
+      <GoogleSignInButton />
 
       <form onSubmit={handleSubmit} noValidate>
         <label className="block text-sm font-semibold mb-1.5" style={{ color: "var(--foreground)" }}>

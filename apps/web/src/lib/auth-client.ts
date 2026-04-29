@@ -10,6 +10,11 @@ export type VerifyOtpResponse = {
   refreshToken: string;
   user: { id: string; email: string; displayName: string };
 };
+export type GoogleCallbackResponse = {
+  accessToken: string;
+  refreshToken: string;
+  user: { id: string; email: string; displayName: string; avatarUrl?: string };
+};
 export type RefreshResponse = { accessToken: string };
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
@@ -38,6 +43,12 @@ export const authClient = {
     apiFetch<VerifyOtpResponse>("/api/auth/verify-otp", {
       method: "POST",
       body: JSON.stringify({ email, otp }),
+    }),
+
+  callbackGoogle: (idToken: string) =>
+    apiFetch<GoogleCallbackResponse>("/api/auth/callback/google", {
+      method: "POST",
+      body: JSON.stringify({ idToken }),
     }),
 
   refresh: (refreshToken: string) =>

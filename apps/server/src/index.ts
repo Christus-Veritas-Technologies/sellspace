@@ -21,8 +21,9 @@ app.use(logger());
 app.use(
   "/*",
   cors({
-    origin: env.CORS_ORIGIN,
+    origin: env.CORS_ORIGIN === "*" ? "*" : env.CORS_ORIGIN.split(",").map(o => o.trim()),
     allowMethods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+    credentials: env.CORS_ORIGIN !== "*", // Only set credentials if not wildcard (browser limitation)
   }),
 );
 

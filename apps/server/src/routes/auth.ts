@@ -8,6 +8,7 @@ import db from "@sellspace/db";
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from "../lib/jwt";
 import { sendOtpEmail } from "../lib/mailer";
 import { generateOtp } from "../lib/otp";
+import { verifyGoogleIdToken } from "../lib/google";
 
 const OTP_RATE_LIMIT = 3; // max OTPs per email per 10 minutes
 const OTP_WINDOW_MS = 10 * 60 * 1000;
@@ -103,6 +104,49 @@ export const authRoutes = new Hono()
         return c.json({ accessToken });
       } catch {
         return c.json({ error: "Invalid or expired refresh token." }, 401);
+      }
+    },
+  )
+
+  // POST /api/auth/callback/google
+  .post(
+    "/callback/google",
+    zValidator("json", z.object({ idToken: z.string().min(1) })),
+    async (c) => {
+      const { idToken } = c.req.valid("json");
+
+      try {
+        const payload = await verifyGoogleIdToken(idToken);
+
+        // Upsert user with Google info
+        const user = await db.user.upsert({
+          where: { email: payload.email },
+          create: {
+            email: payload.email,
+            displayName: payload.name || payload.email.split("@")[0] || "User",
+            avatarUrl: payload.picture || undefined,
+            googleId: payload.sub,
+          },
+          update: {
+            googleId: payload.sub,
+            // Update avatar if it changed
+            avatarUrl: payload.picture || undefined,
+          },
+        });
+
+        const [accessToken, refreshToken] = await Promise.all([
+          signAccessToken({ sub: user.id }),
+          signRefreshToken({ sub: user.id }),
+        ]);
+
+        return c.json({
+          accessToken,
+          refreshToken,
+          user: { id: user.id, email: user.email, displayName: user.displayName, avatarUrl: user.avatarUrl },
+        });
+      } catch (err) {
+        console.error("Google token verification failed:", err);
+        return c.json({ error: "Invalid Google token." }, 401);
       }
     },
   )

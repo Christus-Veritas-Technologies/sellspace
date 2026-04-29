@@ -14,6 +14,7 @@
     "@sellspace/db": "workspace:*",
     "@sellspace/env": "workspace:*",
     "dotenv": "catalog:",
+    "google-auth-library": "^10.6.2",
     "hono": "^4.8.2",
     "zod": "catalog:"
   },
