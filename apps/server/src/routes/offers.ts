@@ -74,6 +74,37 @@ export const offerRoutes = new Hono()
     return c.json({ threads });
   })
 
+  // GET /api/offers/:id — full thread with all messages
+  .get("/:id", requireAuth, async (c) => {
+    const userId = c.get("userId") as string;
+    const threadId = c.req.param("id");
+
+    const thread = await db.offerThread.findUnique({
+      where: { id: threadId },
+      include: {
+        listing: { select: listingPreview },
+        buyer: { select: userPreview },
+        seller: { select: userPreview },
+        messages: {
+          orderBy: { createdAt: "asc" as const },
+          select: {
+            id: true,
+            amount: true,
+            type: true,
+            createdAt: true,
+            sender: { select: userPreview },
+          },
+        },
+      },
+    });
+
+    if (!thread) return c.json({ error: "Offer thread not found" }, 404);
+    if (thread.buyerId !== userId && thread.sellerId !== userId)
+      return c.json({ error: "Forbidden" }, 403);
+
+    return c.json({ thread });
+  })
+
   // POST /api/offers — create offer thread
   .post("/", requireAuth, zValidator("json", createOfferBody), async (c) => {
     const userId = c.get("userId") as string;
