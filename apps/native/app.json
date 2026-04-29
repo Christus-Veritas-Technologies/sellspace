@@ -8,6 +8,7 @@
     },
     "name": "sellspace",
     "slug": "sellspace",
+    "icon": "./assets/images/icon.png",
     "plugins": [
       "expo-font"
     ],
@@ -21,8 +22,17 @@
       }
     },
     "owner": "johnprime",
+    "ios": {
+      "icon": "./assets/images/icon.png",
+      "supportsTabletMode": true
+    },
     "android": {
-      "package": "com.johnprime.sellspace"
+      "package": "com.johnprime.sellspace",
+      "icon": "./assets/images/icon.png",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#FFFFFF"
+      }
     }
   },
   "expo-splash-screen": {
