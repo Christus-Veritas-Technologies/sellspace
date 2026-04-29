@@ -115,8 +115,15 @@ export const authRoutes = new Hono()
     async (c) => {
       const { idToken } = c.req.valid("json");
 
+      console.log("Google callback received, verifying token...");
+
       try {
         const payload = await verifyGoogleIdToken(idToken);
+
+        console.log("Token verified successfully, creating/updating user...", {
+          email: payload.email,
+          sub: payload.sub,
+        });
 
         // Upsert user with Google info
         const user = await db.user.upsert({
@@ -145,8 +152,8 @@ export const authRoutes = new Hono()
           user: { id: user.id, email: user.email, displayName: user.displayName, avatarUrl: user.avatarUrl },
         });
       } catch (err) {
-        console.error("Google token verification failed:", err);
-        return c.json({ error: "Invalid Google token." }, 401);
+        console.error("Google callback error:", err instanceof Error ? err.message : String(err));
+        return c.json({ error: "Invalid Google token. Please try again." }, 401);
       }
     },
   )

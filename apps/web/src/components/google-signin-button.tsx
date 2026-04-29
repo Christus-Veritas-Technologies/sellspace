@@ -35,7 +35,10 @@ export function GoogleSignInButton() {
   const handleSuccess = useCallback((credentialResponse: CredentialResponse) => {
     setError("");
     if (credentialResponse.credential) {
+      console.log("Google sign-in successful, token received, sending to backend...");
       mutation.mutate(credentialResponse.credential);
+    } else {
+      setError("No credential received from Google. Please try again.");
     }
   }, [mutation]);
 

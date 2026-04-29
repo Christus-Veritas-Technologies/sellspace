@@ -25,15 +25,24 @@ export interface GoogleTokenPayload {
  * Throws on invalid or expired token.
  */
 export async function verifyGoogleIdToken(token: string): Promise<GoogleTokenPayload> {
-  const ticket = await client.verifyIdToken({
-    idToken: token,
-    audience: env.GOOGLE_CLIENT_ID,
-  });
+  try {
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: env.GOOGLE_CLIENT_ID,
+    });
 
-  const payload = ticket.getPayload();
-  if (!payload) {
-    throw new Error("Invalid Google token payload");
+    const payload = ticket.getPayload();
+    if (!payload) {
+      throw new Error("Invalid Google token payload");
+    }
+
+    return payload as GoogleTokenPayload;
+  } catch (error) {
+    console.error("Google token verification error:", {
+      error: error instanceof Error ? error.message : String(error),
+      token: token.substring(0, 50) + "...",
+      clientId: env.GOOGLE_CLIENT_ID,
+    });
+    throw error;
   }
-
-  return payload as GoogleTokenPayload;
 }
