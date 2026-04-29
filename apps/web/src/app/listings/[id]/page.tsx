@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { env } from "@sellspace/env/web";
 import { listingsClient } from "@/lib/listings";
 
-import { ActionButtons } from "./_action-buttons";
+import { ActionButtons, OwnerButtons } from "./_action-buttons";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -68,24 +68,35 @@ export default async function ListingDetailPage({
     notFound();
   }
 
-  // Check saved state for the current user
+  // Check saved state + ownership for the current user
   let savedInitial = false;
+  let isOwner = false;
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("ss_access_token")?.value;
     if (token) {
       const BASE = env.NEXT_PUBLIC_SERVER_URL.replace(/\/$/, "");
-      const savedRes = await fetch(`${BASE}/api/saved`, {
-        headers: { Authorization: `Bearer ${token}` },
-        cache: "no-store",
-      });
+      const [savedRes, meRes] = await Promise.all([
+        fetch(`${BASE}/api/saved`, {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
+        }),
+        fetch(`${BASE}/api/users/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
+        }),
+      ]);
       if (savedRes.ok) {
         const savedData = (await savedRes.json()) as { saved: { listingId: string }[] };
         savedInitial = savedData.saved.some((s) => s.listingId === listing.id);
       }
+      if (meRes.ok) {
+        const meData = (await meRes.json()) as { user: { id: string } };
+        isOwner = meData.user.id === listing.seller.id;
+      }
     }
   } catch {
-    // Not logged in or fetch failed — savedInitial stays false
+    // Not logged in or fetch failed — defaults stay false
   }
 
   const cond = CONDITION_CONFIG[listing.condition];
@@ -216,12 +227,27 @@ export default async function ListingDetailPage({
 
               {/* Action buttons */}
               <div className="pt-5 pb-5 border-b border-[#E2E2DC]">
-                <ActionButtons
-                  listingId={listing.id}
-                  listingPrice={listing.price}
-                  sellerId={listing.seller.id}
-                  savedInitial={savedInitial}
-                />
+                {isOwner ? (
+                  <OwnerButtons
+                    listingId={listing.id}
+                    initial={{
+                      title: listing.title,
+                      description: listing.description,
+                      price: listing.price,
+                      condition: listing.condition,
+                      category: listing.category,
+                      city: listing.seller.city ?? listing.city ?? undefined,
+                      imageUrls: listing.images.map((img: { url: string }) => img.url),
+                    }}
+                  />
+                ) : (
+                  <ActionButtons
+                    listingId={listing.id}
+                    listingPrice={listing.price}
+                    sellerId={listing.seller.id}
+                    savedInitial={savedInitial}
+                  />
+                )}
               </div>
 
               {/* Details table */}

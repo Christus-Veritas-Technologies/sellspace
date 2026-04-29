@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 
-import { leaveReview, makeOffer, reportListing, startMessageThread, toggleSave } from "./_actions";
+import { deleteListing, leaveReview, makeOffer, reportListing, startMessageThread, toggleSave, updateListing } from "./_actions";
 
 // ─── Offer modal ──────────────────────────────────────────────────────────────
 
@@ -398,6 +398,281 @@ function ReviewModal({
         )}
       </div>
     </div>
+  );
+}
+
+// ─── Edit modal ───────────────────────────────────────────────────────────────
+
+const CATEGORIES_EDIT = [
+  { value: "ELECTRONICS", label: "Electronics" },
+  { value: "PHONES_TABLETS", label: "Phones & Tablets" },
+  { value: "VEHICLES", label: "Vehicles" },
+  { value: "FURNITURE", label: "Furniture" },
+  { value: "CLOTHING", label: "Clothing" },
+  { value: "SPORTS_OUTDOORS", label: "Sports & Outdoors" },
+  { value: "HOME_GARDEN", label: "Home & Garden" },
+  { value: "BOOKS_EDUCATION", label: "Books & Education" },
+  { value: "FOOD_BEVERAGES", label: "Food & Beverages" },
+  { value: "SERVICES", label: "Services" },
+  { value: "OTHER", label: "Other" },
+];
+
+const CONDITIONS_EDIT = [
+  { value: "BRAND_NEW", label: "Brand New" },
+  { value: "LIKE_NEW", label: "Like New" },
+  { value: "GOOD", label: "Good" },
+  { value: "FAIR", label: "Fair" },
+  { value: "FOR_PARTS", label: "For Parts / Not Working" },
+];
+
+const iCls =
+  "w-full h-10 px-3 rounded-[8px] border border-[#E2E2DC] bg-[#F2F2EF] text-[13px] text-[#1A1A18] focus:outline-none focus:border-[#E8621A] disabled:opacity-60";
+
+function EditModal({
+  listingId,
+  initial,
+  onClose,
+}: {
+  listingId: string;
+  initial: {
+    title: string;
+    description: string;
+    price: number; // cents
+    condition: string;
+    category: string;
+    city?: string;
+    imageUrls: string[];
+  };
+  onClose: () => void;
+}) {
+  const [title, setTitle] = useState(initial.title);
+  const [description, setDescription] = useState(initial.description);
+  const [price, setPrice] = useState(String(initial.price / 100));
+  const [condition, setCondition] = useState(initial.condition);
+  const [category, setCategory] = useState(initial.category);
+  const [city, setCity] = useState(initial.city ?? "");
+  const [imageUrlInput, setImageUrlInput] = useState("");
+  const [imageUrls, setImageUrls] = useState<string[]>(initial.imageUrls);
+  const [error, setError] = useState("");
+  const [pending, startTransition] = useTransition();
+
+  function addImage() {
+    const url = imageUrlInput.trim();
+    if (!url) return;
+    try { new URL(url); } catch { setError("Invalid URL."); return; }
+    if (imageUrls.length >= 10) { setError("Max 10 images."); return; }
+    setImageUrls((p) => [...p, url]);
+    setImageUrlInput("");
+    setError("");
+  }
+
+  function removeImage(i: number) {
+    setImageUrls((p) => p.filter((_, idx) => idx !== i));
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    const cents = Math.round(parseFloat(price) * 100);
+    if (!title.trim() || title.trim().length < 3) { setError("Title must be at least 3 characters."); return; }
+    if (description.trim().length < 10) { setError("Description must be at least 10 characters."); return; }
+    if (!price || isNaN(cents) || cents < 1) { setError("Enter a valid price."); return; }
+    if (imageUrls.length < 1) { setError("Add at least one image URL."); return; }
+
+    startTransition(async () => {
+      try {
+        await updateListing(listingId, {
+          title: title.trim(),
+          description: description.trim(),
+          price: cents,
+          condition,
+          category,
+          city: city.trim() || undefined,
+          imageUrls,
+        });
+        onClose();
+        window.location.reload();
+      } catch (err) {
+        setError((err as Error).message);
+      }
+    });
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm">
+      <div className="w-full sm:max-w-lg bg-[#FAFAF8] rounded-t-2xl sm:rounded-2xl shadow-xl max-h-[90dvh] flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-[#E2E2DC]">
+          <h2 className="text-[18px] font-[700] text-[#1A1A18]" style={{ fontFamily: "'Fraunces', serif" }}>
+            Edit Listing
+          </h2>
+          <button onClick={onClose} aria-label="Close" className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#EFEFEB] text-[#8A8A82] text-xl leading-none">×</button>
+        </div>
+
+        {/* Scrollable body */}
+        <form onSubmit={handleSubmit} className="overflow-y-auto flex-1 px-6 py-5 space-y-4">
+          <div>
+            <label className="block text-[12px] font-[600] text-[#1A1A18] mb-1">Title</label>
+            <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={120} disabled={pending} className={iCls} />
+          </div>
+          <div>
+            <label className="block text-[12px] font-[600] text-[#1A1A18] mb-1">Description</label>
+            <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={4} maxLength={5000} disabled={pending}
+              className="w-full px-3 py-2 rounded-[8px] border border-[#E2E2DC] bg-[#F2F2EF] text-[13px] text-[#1A1A18] focus:outline-none focus:border-[#E8621A] resize-y disabled:opacity-60" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[12px] font-[600] text-[#1A1A18] mb-1">Price (USD)</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8A8A82] text-[13px]">$</span>
+                <input type="number" min="0.01" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)} disabled={pending}
+                  className="w-full h-10 pl-7 pr-3 rounded-[8px] border border-[#E2E2DC] bg-[#F2F2EF] text-[13px] text-[#1A1A18] focus:outline-none focus:border-[#E8621A] disabled:opacity-60" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-[12px] font-[600] text-[#1A1A18] mb-1">City</label>
+              <input type="text" value={city} onChange={(e) => setCity(e.target.value)} maxLength={100} disabled={pending} className={iCls} placeholder="e.g. Harare" />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[12px] font-[600] text-[#1A1A18] mb-1">Condition</label>
+              <select value={condition} onChange={(e) => setCondition(e.target.value)} disabled={pending} className={iCls}>
+                {CONDITIONS_EDIT.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-[12px] font-[600] text-[#1A1A18] mb-1">Category</label>
+              <select value={category} onChange={(e) => setCategory(e.target.value)} disabled={pending} className={iCls}>
+                {CATEGORIES_EDIT.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+              </select>
+            </div>
+          </div>
+          {/* Images */}
+          <div>
+            <label className="block text-[12px] font-[600] text-[#1A1A18] mb-1">Images (min 1, max 10)</label>
+            <div className="flex gap-2 mb-2">
+              <input type="url" value={imageUrlInput} onChange={(e) => setImageUrlInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addImage(); }}}
+                placeholder="https://example.com/image.jpg" disabled={pending}
+                className="flex-1 h-10 px-3 rounded-[8px] border border-[#E2E2DC] bg-[#F2F2EF] text-[13px] text-[#1A1A18] focus:outline-none focus:border-[#E8621A] disabled:opacity-60" />
+              <button type="button" onClick={addImage} disabled={pending}
+                className="h-10 px-3 rounded-[8px] border border-[#E2E2DC] bg-white text-[13px] font-[600] text-[#1A1A18] hover:bg-[#F2F2EF] transition-colors disabled:opacity-60">
+                Add
+              </button>
+            </div>
+            {imageUrls.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {imageUrls.map((url, i) => (
+                  <div key={i} className="relative w-16 h-16 rounded-[6px] overflow-hidden border border-[#E2E2DC] group">
+                    <img src={url} alt="" className="w-full h-full object-cover" />
+                    <button type="button" onClick={() => removeImage(i)}
+                      className="absolute inset-0 w-full h-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-lg"
+                      aria-label="Remove">×</button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {error && <p className="text-[12px] text-[#DC2626]">{error}</p>}
+        </form>
+
+        {/* Footer */}
+        <div className="px-6 pb-6 pt-4 border-t border-[#E2E2DC]">
+          <button type="submit" form="" onClick={handleSubmit} disabled={pending}
+            className="w-full h-11 rounded-[10px] bg-[#0D3B2E] text-[#FAFAF8] text-[14px] font-[600] hover:bg-[#0a2e23] transition-colors disabled:opacity-60">
+            {pending ? "Saving…" : "Save Changes"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Owner buttons ────────────────────────────────────────────────────────────
+
+export function OwnerButtons({
+  listingId,
+  initial,
+}: {
+  listingId: string;
+  initial: {
+    title: string;
+    description: string;
+    price: number;
+    condition: string;
+    category: string;
+    city?: string;
+    imageUrls: string[];
+  };
+}) {
+  const [editing, setEditing] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, startDeleteTransition] = useTransition();
+  const [error, setError] = useState("");
+
+  function handleDelete() {
+    setError("");
+    startDeleteTransition(async () => {
+      try {
+        await deleteListing(listingId);
+      } catch (err) {
+        setError((err as Error).message);
+        setConfirmDelete(false);
+      }
+    });
+  }
+
+  return (
+    <>
+      <div className="flex flex-col gap-2">
+        <button
+          onClick={() => setEditing(true)}
+          className="w-full h-10 rounded-[10px] border border-[#0D3B2E] bg-white text-[#0D3B2E]
+                     text-[14px] font-[600] hover:bg-[#0D3B2E] hover:text-white transition-colors"
+        >
+          Edit Listing
+        </button>
+        <button
+          onClick={() => setConfirmDelete(true)}
+          className="w-full h-10 rounded-[10px] border border-[#E2E2DC] bg-white text-[#DC2626]
+                     text-[14px] font-[600] hover:bg-[#FEE2E2] transition-colors"
+        >
+          Delete Listing
+        </button>
+        {error && <p className="text-[12px] text-[#DC2626]">{error}</p>}
+      </div>
+
+      {/* Edit modal */}
+      {editing && (
+        <EditModal
+          listingId={listingId}
+          initial={initial}
+          onClose={() => setEditing(false)}
+        />
+      )}
+
+      {/* Delete confirmation */}
+      {confirmDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+          <div className="w-full max-w-sm bg-[#FAFAF8] rounded-[16px] p-6 shadow-xl">
+            <h2 className="text-[18px] font-[700] text-[#1A1A18] mb-2" style={{ fontFamily: "'Fraunces', serif" }}>Delete listing?</h2>
+            <p className="text-[13px] text-[#8A8A82] mb-5">This action cannot be undone. The listing will be permanently removed.</p>
+            <div className="flex gap-3">
+              <button onClick={() => setConfirmDelete(false)} disabled={deleting}
+                className="flex-1 h-11 rounded-[10px] border border-[#E2E2DC] bg-white text-[#1A1A18] text-[14px] font-[600] hover:bg-[#F2F2EF] transition-colors disabled:opacity-60">
+                Cancel
+              </button>
+              <button onClick={handleDelete} disabled={deleting}
+                className="flex-1 h-11 rounded-[10px] bg-[#DC2626] text-white text-[14px] font-[600] hover:bg-[#B91C1C] transition-colors disabled:opacity-60">
+                {deleting ? "Deleting…" : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
