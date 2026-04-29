@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 
 import { env } from "@sellspace/env/web";
 import { ListingCard } from "@sellspace/ui/components/listing-card";
+import { ProfileIdentity } from "./_profile-identity";
 
 const BASE = env.NEXT_PUBLIC_SERVER_URL.replace(/\/$/, "");
 
@@ -62,47 +63,16 @@ export default async function ProfilePage() {
       <div className="max-w-[860px] mx-auto px-6 py-8 space-y-8">
 
         {/* Identity card */}
-        <div className="bg-white rounded-[14px] border border-[#E2E2DC] p-6 shadow-[0_1px_3px_rgba(26,26,24,0.06)]">
-          <div className="flex items-center gap-5">
-            {/* Avatar */}
-            <div className="w-20 h-20 rounded-full bg-[#0D3B2E] flex items-center justify-center shrink-0">
-              <span className="text-[28px] font-[700] text-[#FAFAF8]" style={{ fontFamily: "'Fraunces', serif" }}>
-                {initials(user.displayName)}
-              </span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <h1 className="text-[24px] font-[700] text-[#1A1A18] truncate" style={{ fontFamily: "'Fraunces', serif" }}>
-                {user.displayName ?? "Your Profile"}
-              </h1>
-              <p className="text-[13px] text-[#8A8A82] mt-0.5">{user.email}</p>
-              {user.city && (
-                <p className="text-[13px] text-[#8A8A82]">📍 {user.city}</p>
-              )}
-              <p className="text-[12px] text-[#8A8A82] mt-0.5">Member since {memberYear}</p>
-            </div>
-          </div>
-
-          {/* Stats row */}
-          <div className="flex gap-8 mt-5 pt-5 border-t border-[#E2E2DC]">
-            <div className="text-center">
-              <p className="text-[22px] font-[700] text-[#1A1A18]" style={{ fontFamily: "'Fraunces', serif" }}>
-                {listingCount}
-              </p>
-              <p className="text-[12px] text-[#8A8A82]">{listingCount === 1 ? "Listing" : "Listings"}</p>
-            </div>
-            {reviewCount > 0 && (
-              <>
-                <div className="w-px bg-[#E2E2DC]" />
-                <div className="text-center">
-                  <p className="text-[22px] font-[700] text-[#1A1A18]" style={{ fontFamily: "'Fraunces', serif" }}>
-                    {averageRating?.toFixed(1) ?? "—"} <span className="text-[#F4A61D]">★</span>
-                  </p>
-                  <p className="text-[12px] text-[#8A8A82]">{reviewCount} {reviewCount === 1 ? "review" : "reviews"}</p>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
+        <ProfileIdentity
+          displayName={user.displayName}
+          email={user.email}
+          city={user.city}
+          avatarUrl={user.avatarUrl}
+          memberYear={memberYear}
+          listingCount={listingCount}
+          reviewCount={reviewCount}
+          averageRating={averageRating}
+        />
 
         {/* Active listings */}
         {listings.length > 0 && (
