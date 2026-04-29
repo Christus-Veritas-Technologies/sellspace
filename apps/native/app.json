@@ -9,8 +9,7 @@
     "name": "sellspace",
     "slug": "sellspace",
     "plugins": [
-      "expo-font",
-      "expo-image-picker"
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true,
