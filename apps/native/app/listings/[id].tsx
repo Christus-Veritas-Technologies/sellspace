@@ -1,23 +1,37 @@
 import {
   ArrowLeft01Icon,
+  Bookmark01Icon,
+  BookmarkAdd01Icon,
+  FavouriteIcon,
+  Flag01Icon,
+  StarIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   Image,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
   Pressable,
   SafeAreaView,
   ScrollView,
   Text,
+  TextInput,
   View,
 } from "react-native";
 
 import { colors, radii, shadows, spacing } from "@sellspace/ui/theme";
-import { listingsApi } from "@/lib/listings";
+import { messagesApi } from "@/lib/messages";
+import { offersApi } from "@/lib/offers";
+import { reviewsApi } from "@/lib/reviews";
+import { savedApi } from "@/lib/saved";
 import type { Condition, Category } from "@/lib/listings";
+import { listingsApi } from "@/lib/listings";
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
@@ -87,6 +101,23 @@ function DetailRow({ label, value }: { label: string; value: string }) {
   );
 }
 
+// ─── Star row helper ──────────────────────────────────────────────────────────
+
+function StarRow({ rating, size = 14 }: { rating: number; size?: number }) {
+  return (
+    <View style={{ flexDirection: "row", gap: 2 }}>
+      {[1, 2, 3, 4, 5].map((i) => (
+        <HugeiconsIcon
+          key={i}
+          icon={i <= Math.round(rating) ? FavouriteIcon : StarIcon}
+          size={size}
+          color={i <= Math.round(rating) ? colors.amber : colors.border}
+        />
+      ))}
+    </View>
+  );
+}
+
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function ListingDetailScreen() {
@@ -98,6 +129,107 @@ export default function ListingDetailScreen() {
     queryFn: () => listingsApi.getListing(id),
     enabled: !!id,
   });
+
+  // ── Saved / offer / message / report / review state ────────────────────────
+  const [saved, setSaved] = useState(false);
+  const [showOfferModal, setShowOfferModal] = useState(false);
+  const [offerAmount, setOfferAmount] = useState("");
+  const [offerError, setOfferError] = useState("");
+  const [showMessageModal, setShowMessageModal] = useState(false);
+  const [messageBody, setMessageBody] = useState("");
+  const [messageError, setMessageError] = useState("");
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportReason, setReportReason] = useState("");
+  const [reportError, setReportError] = useState("");
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewComment, setReviewComment] = useState("");
+  const [reviewError, setReviewError] = useState("");
+
+  const saveMutation = useMutation({
+    mutationFn: () => (saved ? savedApi.unsave(id) : savedApi.save(id)),
+    onSuccess: (data) => setSaved(data.saved),
+    onError: (err: Error) => Alert.alert("Error", err.message),
+  });
+
+  const offerMutation = useMutation({
+    mutationFn: (amount: number) => offersApi.createOffer(id, amount),
+    onSuccess: (data) => {
+      setShowOfferModal(false);
+      setOfferAmount("");
+      setOfferError("");
+      router.push(`/offers/${data.thread.id}` as never);
+    },
+    onError: (err: Error) => setOfferError(err.message),
+  });
+
+  const messageMutation = useMutation({
+    mutationFn: (body: string) => messagesApi.startThread(id, body),
+    onSuccess: (data) => {
+      setShowMessageModal(false);
+      setMessageBody("");
+      setMessageError("");
+      router.push(`/messages/${data.threadId}` as never);
+    },
+    onError: (err: Error) => setMessageError(err.message),
+  });
+
+  const reportMutation = useMutation({
+    mutationFn: (reason: string) => savedApi.report(id, reason),
+    onSuccess: () => {
+      setShowReportModal(false);
+      setReportReason("");
+      setReportError("");
+      Alert.alert("Reported", "Thank you for your report. We'll review it shortly.");
+    },
+    onError: (err: Error) => setReportError(err.message),
+  });
+
+  const reviewMutation = useMutation({
+    mutationFn: ({ rating, comment }: { rating: number; comment: string }) =>
+      reviewsApi.submitReview(listing!.sellerId, rating, comment || undefined),
+    onSuccess: () => {
+      setShowReviewModal(false);
+      setReviewRating(0);
+      setReviewComment("");
+      setReviewError("");
+      Alert.alert("Review submitted", "Thank you for your feedback!");
+    },
+    onError: (err: Error) => setReviewError(err.message),
+  });
+
+  function handleSubmitOffer() {
+    const cents = Math.round(parseFloat(offerAmount) * 100);
+    if (!cents || isNaN(cents) || cents < 1) {
+      setOfferError("Enter a valid offer amount.");
+      return;
+    }
+    offerMutation.mutate(cents);
+  }
+
+  function handleSubmitMessage() {
+    if (!messageBody.trim()) {
+      setMessageError("Message cannot be empty.");
+      return;
+    }
+    messageMutation.mutate(messageBody.trim());
+  }
+
+  function handleSubmitReport() {
+    if (reportReason.trim().length < 5) {
+      setReportError("Please describe the issue (at least 5 characters).");
+      return;
+    }
+    reportMutation.mutate(reportReason.trim());
+  }
+
+  function handleSubmitReview() {
+    if (!reviewRating) {
+      setReviewError("Please select a star rating.");
+      return;
+    }
+    reviewMutation.mutate({ rating: reviewRating, comment: reviewComment });
+  }
 
   // ── Loading ─────────────────────────────────────────────────────────────────
   if (isLoading) {
@@ -159,6 +291,17 @@ export default function ListingDetailScreen() {
         >
           {listing.title}
         </Text>
+        <Pressable
+          onPress={() => saveMutation.mutate()}
+          disabled={saveMutation.isPending}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <HugeiconsIcon
+            icon={saved ? BookmarkAdd01Icon : Bookmark01Icon}
+            size={22}
+            color={saved ? colors.accent : colors.textMuted}
+          />
+        </Pressable>
       </View>
 
       {/* Scrollable content */}
@@ -265,7 +408,7 @@ export default function ListingDetailScreen() {
               {initials(listing.seller.displayName)}
             </Text>
           </View>
-          <View>
+          <View style={{ flex: 1 }}>
             <Text style={{ fontFamily: "DMSans_700Bold", fontSize: 15, color: colors.text }}>
               {listing.seller.displayName ?? "Seller"}
             </Text>
@@ -273,6 +416,21 @@ export default function ListingDetailScreen() {
               {listing.seller.city ?? listing.city ?? "Zimbabwe"}
             </Text>
           </View>
+          <Pressable
+            onPress={() => setShowReviewModal(true)}
+            style={{
+              paddingHorizontal: 12,
+              paddingVertical: 7,
+              borderRadius: radii.sm,
+              borderWidth: 1,
+              borderColor: colors.border,
+              backgroundColor: colors.surface,
+            }}
+          >
+            <Text style={{ fontFamily: "DMSans_500Medium", fontSize: 12, color: colors.text }}>
+              Rate Seller
+            </Text>
+          </Pressable>
         </View>
 
         {/* Description */}
@@ -352,7 +510,7 @@ export default function ListingDetailScreen() {
         }}
       >
         <Pressable
-          onPress={() => Alert.alert("Coming soon", "Offers are not yet available.")}
+          onPress={() => setShowOfferModal(true)}
           style={({ pressed }) => ({
             flex: 1,
             height: 46,
@@ -367,7 +525,7 @@ export default function ListingDetailScreen() {
           </Text>
         </Pressable>
         <Pressable
-          onPress={() => Alert.alert("Coming soon", "Messaging is not yet available.")}
+          onPress={() => setShowMessageModal(true)}
           style={({ pressed }) => ({
             flex: 1,
             height: 46,
@@ -384,6 +542,161 @@ export default function ListingDetailScreen() {
           </Text>
         </Pressable>
       </View>
+
+      {/* Report link */}
+      <Pressable
+        onPress={() => setShowReportModal(true)}
+        style={{
+          position: "absolute",
+          bottom: 88,
+          alignSelf: "center",
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 4,
+          paddingVertical: 4,
+          paddingHorizontal: 12,
+        }}
+      >
+        <HugeiconsIcon icon={Flag01Icon} size={12} color={colors.textMuted} />
+        <Text style={{ fontFamily: "DMSans_400Regular", fontSize: 12, color: colors.textMuted }}>
+          Report this listing
+        </Text>
+      </Pressable>
+
+      {/* ── Offer modal ──────────────────────────────────────────────────── */}
+      <Modal visible={showOfferModal} animationType="slide" transparent onRequestClose={() => setShowOfferModal(false)}>
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.4)" }}>
+          <View style={{ backgroundColor: colors.surface, borderTopLeftRadius: radii.xl, borderTopRightRadius: radii.xl, padding: spacing[6], paddingBottom: 40 }}>
+            <Text style={{ fontFamily: "Fraunces_700Bold", fontSize: 20, color: colors.text, marginBottom: spacing[1] }}>Make an Offer</Text>
+            <Text style={{ fontFamily: "DMSans_400Regular", fontSize: 13, color: colors.textMuted, marginBottom: spacing[5] }}>
+              Asking: ${((listing?.price ?? 0) / 100).toFixed(2)}
+            </Text>
+            <Text style={{ fontFamily: "DMSans_500Medium", fontSize: 13, color: colors.text, marginBottom: 6 }}>Your offer (USD)</Text>
+            <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: colors.surface2, borderRadius: radii.md, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 14, marginBottom: spacing[4] }}>
+              <Text style={{ fontFamily: "DMSans_400Regular", fontSize: 15, color: colors.textMuted, marginRight: 6 }}>$</Text>
+              <TextInput
+                value={offerAmount}
+                onChangeText={setOfferAmount}
+                keyboardType="decimal-pad"
+                placeholder="0.00"
+                placeholderTextColor={colors.textMuted}
+                style={{ flex: 1, fontFamily: "DMSans_400Regular", fontSize: 15, color: colors.text, paddingVertical: 11 }}
+                autoFocus
+              />
+            </View>
+            {!!offerError && <Text style={{ fontFamily: "DMSans_400Regular", fontSize: 13, color: colors.destructive, marginBottom: spacing[3] }}>{offerError}</Text>}
+            <View style={{ flexDirection: "row", gap: 12 }}>
+              <Pressable onPress={() => setShowOfferModal(false)} style={{ flex: 1, paddingVertical: 13, borderRadius: radii.md, borderWidth: 1, borderColor: colors.border, alignItems: "center" }}>
+                <Text style={{ fontFamily: "DMSans_500Medium", fontSize: 15, color: colors.text }}>Cancel</Text>
+              </Pressable>
+              <Pressable onPress={handleSubmitOffer} disabled={offerMutation.isPending} style={{ flex: 1, paddingVertical: 13, borderRadius: radii.md, backgroundColor: colors.accent, alignItems: "center", opacity: offerMutation.isPending ? 0.6 : 1 }}>
+                <Text style={{ fontFamily: "DMSans_700Bold", fontSize: 15, color: "#fff" }}>{offerMutation.isPending ? "Sending…" : "Send Offer"}</Text>
+              </Pressable>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* ── Message modal ─────────────────────────────────────────────────── */}
+      <Modal visible={showMessageModal} animationType="slide" transparent onRequestClose={() => setShowMessageModal(false)}>
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.4)" }}>
+          <View style={{ backgroundColor: colors.surface, borderTopLeftRadius: radii.xl, borderTopRightRadius: radii.xl, padding: spacing[6], paddingBottom: 40 }}>
+            <Text style={{ fontFamily: "Fraunces_700Bold", fontSize: 20, color: colors.text, marginBottom: spacing[5] }}>Message Seller</Text>
+            <Text style={{ fontFamily: "DMSans_500Medium", fontSize: 13, color: colors.text, marginBottom: 6 }}>Your message</Text>
+            <TextInput
+              value={messageBody}
+              onChangeText={setMessageBody}
+              multiline
+              numberOfLines={4}
+              placeholder="Hi, is this still available?"
+              placeholderTextColor={colors.textMuted}
+              style={{ fontFamily: "DMSans_400Regular", fontSize: 15, color: colors.text, backgroundColor: colors.surface2, borderRadius: radii.md, borderWidth: 1, borderColor: colors.border, padding: 14, minHeight: 90, textAlignVertical: "top", marginBottom: spacing[4] }}
+              autoFocus
+            />
+            {!!messageError && <Text style={{ fontFamily: "DMSans_400Regular", fontSize: 13, color: colors.destructive, marginBottom: spacing[3] }}>{messageError}</Text>}
+            <View style={{ flexDirection: "row", gap: 12 }}>
+              <Pressable onPress={() => setShowMessageModal(false)} style={{ flex: 1, paddingVertical: 13, borderRadius: radii.md, borderWidth: 1, borderColor: colors.border, alignItems: "center" }}>
+                <Text style={{ fontFamily: "DMSans_500Medium", fontSize: 15, color: colors.text }}>Cancel</Text>
+              </Pressable>
+              <Pressable onPress={handleSubmitMessage} disabled={messageMutation.isPending} style={{ flex: 1, paddingVertical: 13, borderRadius: radii.md, backgroundColor: colors.primary, alignItems: "center", opacity: messageMutation.isPending ? 0.6 : 1 }}>
+                <Text style={{ fontFamily: "DMSans_700Bold", fontSize: 15, color: "#FAFAF8" }}>{messageMutation.isPending ? "Sending…" : "Send Message"}</Text>
+              </Pressable>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* ── Report modal ──────────────────────────────────────────────────── */}
+      <Modal visible={showReportModal} animationType="slide" transparent onRequestClose={() => setShowReportModal(false)}>
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.4)" }}>
+          <View style={{ backgroundColor: colors.surface, borderTopLeftRadius: radii.xl, borderTopRightRadius: radii.xl, padding: spacing[6], paddingBottom: 40 }}>
+            <Text style={{ fontFamily: "Fraunces_700Bold", fontSize: 20, color: colors.text, marginBottom: 6 }}>Report Listing</Text>
+            <Text style={{ fontFamily: "DMSans_400Regular", fontSize: 13, color: colors.textMuted, marginBottom: spacing[5] }}>Let us know why this listing is problematic.</Text>
+            <TextInput
+              value={reportReason}
+              onChangeText={setReportReason}
+              multiline
+              numberOfLines={4}
+              placeholder="Describe the issue…"
+              placeholderTextColor={colors.textMuted}
+              style={{ fontFamily: "DMSans_400Regular", fontSize: 15, color: colors.text, backgroundColor: colors.surface2, borderRadius: radii.md, borderWidth: 1, borderColor: colors.border, padding: 14, minHeight: 90, textAlignVertical: "top", marginBottom: spacing[4] }}
+              autoFocus
+            />
+            {!!reportError && <Text style={{ fontFamily: "DMSans_400Regular", fontSize: 13, color: colors.destructive, marginBottom: spacing[3] }}>{reportError}</Text>}
+            <View style={{ flexDirection: "row", gap: 12 }}>
+              <Pressable onPress={() => setShowReportModal(false)} style={{ flex: 1, paddingVertical: 13, borderRadius: radii.md, borderWidth: 1, borderColor: colors.border, alignItems: "center" }}>
+                <Text style={{ fontFamily: "DMSans_500Medium", fontSize: 15, color: colors.text }}>Cancel</Text>
+              </Pressable>
+              <Pressable onPress={handleSubmitReport} disabled={reportMutation.isPending} style={{ flex: 1, paddingVertical: 13, borderRadius: radii.md, backgroundColor: colors.destructive, alignItems: "center", opacity: reportMutation.isPending ? 0.6 : 1 }}>
+                <Text style={{ fontFamily: "DMSans_700Bold", fontSize: 15, color: "#fff" }}>{reportMutation.isPending ? "Reporting…" : "Submit Report"}</Text>
+              </Pressable>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* ── Review modal ──────────────────────────────────────────────────── */}
+      <Modal visible={showReviewModal} animationType="slide" transparent onRequestClose={() => setShowReviewModal(false)}>
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.4)" }}>
+          <View style={{ backgroundColor: colors.surface, borderTopLeftRadius: radii.xl, borderTopRightRadius: radii.xl, padding: spacing[6], paddingBottom: 40 }}>
+            <Text style={{ fontFamily: "Fraunces_700Bold", fontSize: 20, color: colors.text, marginBottom: 6 }}>Rate Seller</Text>
+            <Text style={{ fontFamily: "DMSans_400Regular", fontSize: 13, color: colors.textMuted, marginBottom: spacing[4] }}>
+              How was your experience with {listing?.seller?.displayName ?? "this seller"}?
+            </Text>
+            {/* Star picker */}
+            <View style={{ flexDirection: "row", gap: 8, marginBottom: spacing[5] }}>
+              {[1, 2, 3, 4, 5].map((i) => (
+                <Pressable key={i} onPress={() => setReviewRating(i)} hitSlop={8}>
+                  <HugeiconsIcon
+                    icon={i <= reviewRating ? FavouriteIcon : StarIcon}
+                    size={32}
+                    color={i <= reviewRating ? colors.amber : colors.border}
+                  />
+                </Pressable>
+              ))}
+            </View>
+            <Text style={{ fontFamily: "DMSans_500Medium", fontSize: 13, color: colors.text, marginBottom: 6 }}>Comment (optional)</Text>
+            <TextInput
+              value={reviewComment}
+              onChangeText={setReviewComment}
+              multiline
+              numberOfLines={3}
+              placeholder="Share your experience…"
+              placeholderTextColor={colors.textMuted}
+              style={{ fontFamily: "DMSans_400Regular", fontSize: 15, color: colors.text, backgroundColor: colors.surface2, borderRadius: radii.md, borderWidth: 1, borderColor: colors.border, padding: 14, minHeight: 80, textAlignVertical: "top", marginBottom: spacing[4] }}
+            />
+            {!!reviewError && <Text style={{ fontFamily: "DMSans_400Regular", fontSize: 13, color: colors.destructive, marginBottom: spacing[3] }}>{reviewError}</Text>}
+            <View style={{ flexDirection: "row", gap: 12 }}>
+              <Pressable onPress={() => setShowReviewModal(false)} style={{ flex: 1, paddingVertical: 13, borderRadius: radii.md, borderWidth: 1, borderColor: colors.border, alignItems: "center" }}>
+                <Text style={{ fontFamily: "DMSans_500Medium", fontSize: 15, color: colors.text }}>Cancel</Text>
+              </Pressable>
+              <Pressable onPress={handleSubmitReview} disabled={reviewMutation.isPending} style={{ flex: 1, paddingVertical: 13, borderRadius: radii.md, backgroundColor: colors.primary, alignItems: "center", opacity: reviewMutation.isPending ? 0.6 : 1 }}>
+                <Text style={{ fontFamily: "DMSans_700Bold", fontSize: 15, color: "#FAFAF8" }}>{reviewMutation.isPending ? "Submitting…" : "Submit Review"}</Text>
+              </Pressable>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </SafeAreaView>
   );
 }

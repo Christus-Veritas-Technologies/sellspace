@@ -2,6 +2,7 @@ import {
   Edit01Icon,
   Logout01Icon,
   MapPinIcon,
+  StarIcon,
   Tag01Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react-native";
@@ -27,6 +28,8 @@ import type { Category, Condition } from "@/lib/listings";
 import { tokenStorage } from "@/lib/auth";
 import { getStoredUserId, userApi } from "@/lib/user";
 import type { UpdateProfileBody, UserListingPreview } from "@/lib/user";
+import { reviewsApi } from "@/lib/reviews";
+import type { Review } from "@/lib/reviews";
 
 // ─── Avatar circle ────────────────────────────────────────────────────────────
 
@@ -249,6 +252,12 @@ export default function ProfileScreen() {
     enabled: !!userId,
   });
 
+  const { data: reviewsData } = useQuery({
+    queryKey: ["reviews", userId],
+    queryFn: () => reviewsApi.getSellerReviews(userId!),
+    enabled: !!userId,
+  });
+
   const updateMutation = useMutation({
     mutationFn: (body: UpdateProfileBody) => userApi.updateMe(body),
     onSuccess: () => {
@@ -320,6 +329,9 @@ export default function ProfileScreen() {
   }
 
   const { user, listings, listingCount } = data;
+  const avgRating = reviewsData?.averageRating ?? null;
+  const reviewCount = reviewsData?.reviewCount ?? 0;
+  const reviews = reviewsData?.reviews ?? [];
 
   return (
     <>
@@ -410,26 +422,29 @@ export default function ProfileScreen() {
               }}
             >
               <View style={{ alignItems: "center" }}>
-                <Text
-                  style={{
-                    fontFamily: "Fraunces_700Bold",
-                    fontSize: 20,
-                    color: colors.text,
-                  }}
-                >
+                <Text style={{ fontFamily: "Fraunces_700Bold", fontSize: 20, color: colors.text }}>
                   {listingCount}
                 </Text>
-                <Text
-                  style={{
-                    fontFamily: "DMSans_400Regular",
-                    fontSize: 12,
-                    color: colors.textMuted,
-                    marginTop: 2,
-                  }}
-                >
+                <Text style={{ fontFamily: "DMSans_400Regular", fontSize: 12, color: colors.textMuted, marginTop: 2 }}>
                   {listingCount === 1 ? "Listing" : "Listings"}
                 </Text>
               </View>
+              {reviewCount > 0 && (
+                <>
+                  <View style={{ width: 1, height: 30, backgroundColor: colors.border }} />
+                  <View style={{ alignItems: "center" }}>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
+                      <HugeiconsIcon icon={StarIcon} size={16} color={colors.amber} />
+                      <Text style={{ fontFamily: "Fraunces_700Bold", fontSize: 20, color: colors.text }}>
+                        {avgRating?.toFixed(1) ?? "—"}
+                      </Text>
+                    </View>
+                    <Text style={{ fontFamily: "DMSans_400Regular", fontSize: 12, color: colors.textMuted, marginTop: 2 }}>
+                      {reviewCount === 1 ? "Review" : "Reviews"}
+                    </Text>
+                  </View>
+                </>
+              )}
             </View>
           </View>
 
@@ -480,6 +495,62 @@ export default function ProfileScreen() {
               />
             </View>
           ) : null}
+
+          {/* ── Reviews ───────────────────────────────────────────────── */}
+          {reviews.length > 0 && (
+            <View style={{ marginHorizontal: spacing[5], marginTop: spacing[6] }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: spacing[3] }}>
+                <HugeiconsIcon icon={StarIcon} size={16} color={colors.text} />
+                <Text style={{ fontFamily: "DMSans_700Bold", fontSize: 15, color: colors.text }}>Reviews</Text>
+              </View>
+              {reviews.map((review: Review) => (
+                <View
+                  key={review.id}
+                  style={{
+                    backgroundColor: colors.surface,
+                    borderRadius: radii.lg,
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                    padding: spacing[4],
+                    marginBottom: spacing[3],
+                    ...shadows.card,
+                  }}
+                >
+                  <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                      <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center" }}>
+                        <Text style={{ fontFamily: "Fraunces_700Bold", fontSize: 13, color: "#FAFAF8" }}>
+                          {review.reviewer.displayName
+                            .split(" ")
+                            .slice(0, 2)
+                            .map((w) => w[0]?.toUpperCase() ?? "")
+                            .join("")}
+                        </Text>
+                      </View>
+                      <Text style={{ fontFamily: "DMSans_700Bold", fontSize: 14, color: colors.text }}>
+                        {review.reviewer.displayName}
+                      </Text>
+                    </View>
+                    <View style={{ flexDirection: "row", gap: 2 }}>
+                      {[1, 2, 3, 4, 5].map((s) => (
+                        <HugeiconsIcon
+                          key={s}
+                          icon={StarIcon}
+                          size={13}
+                          color={s <= review.rating ? colors.amber : colors.border}
+                        />
+                      ))}
+                    </View>
+                  </View>
+                  {review.comment ? (
+                    <Text style={{ fontFamily: "DMSans_400Regular", fontSize: 13, color: colors.textMuted, lineHeight: 18 }}>
+                      {review.comment}
+                    </Text>
+                  ) : null}
+                </View>
+              ))}
+            </View>
+          )}
 
           {/* ── Account actions ────────────────────────────────────────── */}
           <View
