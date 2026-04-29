@@ -1,12 +1,12 @@
 import { type NextRequest, NextResponse } from "next/server";
 
-const PUBLIC_PATHS = ["/auth/login", "/auth/verify", "/api/auth"];
+const PUBLIC_PATHS = ["/", "/auth/login", "/auth/verify", "/auth/logout", "/api/auth", "/search", "/listings"];
 
 export function middleware(req: NextRequest): NextResponse {
   const { pathname } = req.nextUrl;
 
   // Allow public paths through
-  if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
+  if (PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
     return NextResponse.next();
   }
 
@@ -24,7 +24,7 @@ export function middleware(req: NextRequest): NextResponse {
 export const config = {
   matcher: [
     /*
-     * Protect all routes except static files, images, and favicon.
+     * Protect all routes except static files and images.
      * Next.js internally resolves _next/static, _next/image, favicon.ico.
      */
     "/((?!_next/static|_next/image|favicon.ico).*)",
