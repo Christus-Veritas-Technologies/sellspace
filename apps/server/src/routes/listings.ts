@@ -34,6 +34,7 @@ const listingFeedQuery = z.object({
   q: z.string().optional(),
   category: CategoryEnum.optional(),
   condition: ConditionEnum.optional(),
+  city: z.string().optional(),
   minPrice: z.coerce.number().int().min(0).optional(),
   maxPrice: z.coerce.number().int().min(0).optional(),
   sort: z.enum(["newest", "oldest", "price_asc", "price_desc"]).default("newest"),
@@ -68,7 +69,7 @@ export const listingRoutes = new Hono()
 
   // GET /api/listings — paginated feed
   .get("/", zValidator("query", listingFeedQuery), async (c) => {
-    const { q, category, condition, minPrice, maxPrice, sort, page, limit } =
+    const { q, category, condition, city, minPrice, maxPrice, sort, page, limit } =
       c.req.valid("query");
 
     const orderBy =
@@ -87,10 +88,20 @@ export const listingRoutes = new Hono()
       }),
       ...(category && { category }),
       ...(condition && { condition }),
-      ...(minPrice !== undefined && { price: { gte: minPrice } }),
-      ...(maxPrice !== undefined && { price: { lte: maxPrice } }),
+      ...(city && {
+        OR: [
+          { city: { contains: city } },
+          { seller: { city: { contains: city } } },
+        ],
+      }),
       ...(minPrice !== undefined && maxPrice !== undefined && {
         price: { gte: minPrice, lte: maxPrice },
+      }),
+      ...(minPrice !== undefined && maxPrice === undefined && {
+        price: { gte: minPrice },
+      }),
+      ...(maxPrice !== undefined && minPrice === undefined && {
+        price: { lte: maxPrice },
       }),
     };
 
@@ -152,7 +163,19 @@ export const listingRoutes = new Hono()
     // Increment view count asynchronously (best-effort, non-blocking)
     db.listing.update({ where: { id }, data: { views: { increment: 1 } } }).catch(() => null);
 
-    return c.json(listing);
+    const sellerRating = await db.review.aggregate({
+      where: { sellerId: listing.sellerId },
+      _avg: { rating: true },
+      _count: { rating: true },
+    });
+
+    return c.json({
+      ...listing,
+      sellerRating: {
+        average: sellerRating._avg.rating,
+        count: sellerRating._count.rating,
+      },
+    });
   })
 
   // PATCH /api/listings/:id — update (owner only)

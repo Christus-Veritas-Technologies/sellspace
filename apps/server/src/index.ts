@@ -9,6 +9,8 @@ import { messageRoutes } from "./routes/messages";
 import { notificationRoutes } from "./routes/notifications";
 import { offerRoutes } from "./routes/offers";
 import { reportRoutes } from "./routes/reports";
+import { reviewRoutes } from "./routes/reviews";
+import { savedRoutes } from "./routes/saved";
 import { userRoutes } from "./routes/users";
 import { websocket, wsRoutes } from "./routes/ws";
 
@@ -34,6 +36,8 @@ app.route("/api/offers", offerRoutes);
 app.route("/api/messages", messageRoutes);
 app.route("/api/notifications", notificationRoutes);
 app.route("/api/reports", reportRoutes);
+app.route("/api/saved", savedRoutes);
+app.route("/api/reviews", reviewRoutes);
 
 // ─── WebSocket ────────────────────────────────────────────────────────────────
 

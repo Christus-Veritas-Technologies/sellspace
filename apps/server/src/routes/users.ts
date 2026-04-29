@@ -35,6 +35,61 @@ const listingPreviewSelect = {
 
 export const userRoutes = new Hono()
 
+  // GET /api/users/me — own profile (auth required)
+  .get("/me", requireAuth, async (c) => {
+    const userId = c.get("userId") as string;
+
+    const user = await db.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        displayName: true,
+        avatarUrl: true,
+        city: true,
+        email: true,
+        createdAt: true,
+      },
+    });
+
+    if (!user) return c.json({ error: "User not found" }, 404);
+
+    const [listings, listingCount, reviews, ratingAggregate] = await Promise.all([
+      db.listing.findMany({
+        where: { sellerId: userId, sold: false },
+        take: 6,
+        orderBy: { createdAt: "desc" },
+        select: listingPreviewSelect,
+      }),
+      db.listing.count({ where: { sellerId: userId, sold: false } }),
+      db.review.findMany({
+        where: { sellerId: userId },
+        take: 10,
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          rating: true,
+          comment: true,
+          createdAt: true,
+          reviewer: { select: { id: true, displayName: true, avatarUrl: true } },
+        },
+      }),
+      db.review.aggregate({
+        where: { sellerId: userId },
+        _avg: { rating: true },
+        _count: { rating: true },
+      }),
+    ]);
+
+    return c.json({
+      user,
+      listings,
+      listingCount,
+      reviews,
+      averageRating: ratingAggregate._avg.rating,
+      reviewCount: ratingAggregate._count.rating,
+    });
+  })
+
   // GET /api/users/:id — public profile
   .get("/:id", async (c) => {
     const { id } = c.req.param();
@@ -64,7 +119,34 @@ export const userRoutes = new Hono()
       db.listing.count({ where: { sellerId: id, sold: false } }),
     ]);
 
-    return c.json({ user, listings, listingCount });
+    const [reviews, ratingAggregate] = await Promise.all([
+      db.review.findMany({
+        where: { sellerId: id },
+        take: 10,
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          rating: true,
+          comment: true,
+          createdAt: true,
+          reviewer: { select: { id: true, displayName: true, avatarUrl: true } },
+        },
+      }),
+      db.review.aggregate({
+        where: { sellerId: id },
+        _avg: { rating: true },
+        _count: { rating: true },
+      }),
+    ]);
+
+    return c.json({
+      user,
+      listings,
+      listingCount,
+      reviews,
+      averageRating: ratingAggregate._avg.rating,
+      reviewCount: ratingAggregate._count.rating,
+    });
   })
 
   // PATCH /api/users/me — update own profile (auth required)

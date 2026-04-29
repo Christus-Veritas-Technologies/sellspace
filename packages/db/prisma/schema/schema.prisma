@@ -68,6 +68,8 @@ model User {
   notifications   Notification[]
   otpRequests     OtpRequest[]
   reports         Report[]
+  givenReviews    Review[]        @relation("GivenReviews")
+  receivedReviews Review[]        @relation("ReceivedReviews")
 
   buyerOfferThreads  OfferThread[]   @relation("BuyerOfferThreads")
   sellerOfferThreads OfferThread[]   @relation("SellerOfferThreads")
@@ -101,6 +103,7 @@ model Listing {
   offerThreads   OfferThread[]
   messageThreads MessageThread[]
   reports        Report[]
+  reviews        Review[]
 
   @@index([sellerId])
   @@index([category])
@@ -256,4 +259,25 @@ model Report {
 
   @@index([listingId])
   @@index([reporterId])
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  rating    Int      // 1–5
+  comment   String?
+  createdAt DateTime @default(now())
+
+  reviewerId String
+  reviewer   User   @relation("GivenReviews", fields: [reviewerId], references: [id], onDelete: Cascade)
+
+  sellerId String
+  seller   User   @relation("ReceivedReviews", fields: [sellerId], references: [id], onDelete: Cascade)
+
+  listingId String?
+  listing   Listing? @relation(fields: [listingId], references: [id], onDelete: SetNull)
+
+  @@unique([reviewerId, sellerId])
+  @@index([sellerId])
+  @@index([reviewerId])
+  @@index([createdAt])
 }
