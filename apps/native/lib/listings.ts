@@ -1,5 +1,7 @@
 import { env } from "@sellspace/env/native";
 
+import { tokenStorage } from "./auth";
+
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 export type Condition = "BRAND_NEW" | "LIKE_NEW" | "GOOD" | "FAIR" | "FOR_PARTS";
@@ -64,12 +66,37 @@ export interface ListingsQuery {
   limit?: number;
 }
 
+export interface CreateListingInput {
+  title: string;
+  description: string;
+  price: number; // cents
+  condition: string;
+  category: string;
+  city?: string;
+  imageUrls: string[];
+}
+
 // ─── API client ───────────────────────────────────────────────────────────────
 
 const BASE_URL = env.EXPO_PUBLIC_SERVER_URL;
 
 async function get<T>(path: string): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`);
+  const data = await res.json();
+  if (!res.ok) throw new Error((data as { error?: string }).error ?? "Request failed");
+  return data as T;
+}
+
+async function authedPost<T>(path: string, body: unknown): Promise<T> {
+  const token = await tokenStorage.getAccessToken();
+  const res = await fetch(`${BASE_URL}${path}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(body),
+  });
   const data = await res.json();
   if (!res.ok) throw new Error((data as { error?: string }).error ?? "Request failed");
   return data as T;
@@ -87,5 +114,9 @@ export const listingsApi = {
 
   getListing(id: string): Promise<Listing> {
     return get<Listing>(`/api/listings/${id}`);
+  },
+
+  createListing(input: CreateListingInput): Promise<{ id: string }> {
+    return authedPost<{ id: string }>("/api/listings", input);
   },
 };
