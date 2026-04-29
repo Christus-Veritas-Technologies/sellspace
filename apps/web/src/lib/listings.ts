@@ -62,6 +62,7 @@ export interface ListingsFeedParams {
   condition?: Condition;
   minPrice?: number;
   maxPrice?: number;
+  city?: string;
   sort?: "newest" | "oldest" | "price_asc" | "price_desc";
   page?: number;
   limit?: number;

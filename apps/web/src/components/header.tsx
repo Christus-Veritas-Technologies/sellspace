@@ -1,10 +1,11 @@
 import {
   BookmarkAdd01Icon,
   Message01Icon,
-  Search01Icon,
   UserIcon,
 } from "hugeicons-react";
 import Link from "next/link";
+
+import { HeaderSearchBar } from "./header-search-bar";
 
 // ─── Sub nav category labels ─────────────────────────────────────────────────
 
@@ -41,21 +42,7 @@ export default function SiteHeader() {
           </span>
         </Link>
 
-        {/* Search bar */}
-        <div className="relative flex-1 max-w-[560px]">
-          <Search01Icon
-            size={16}
-            color="#8A8A82"
-            className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
-          />
-          <input
-            type="search"
-            placeholder="Search listings…"
-            className="w-full h-10 pl-9 pr-4 rounded-full bg-white text-[14px]
-                       text-[#1A1A18] placeholder:text-[#8A8A82] border-0 outline-none
-                       focus:ring-2 focus:ring-[#E8621A]/60"
-          />
-        </div>
+        <HeaderSearchBar />
 
         {/* Right actions */}
         <nav className="ml-auto flex items-center gap-1">
@@ -101,7 +88,7 @@ export default function SiteHeader() {
         {SUB_NAV_CATEGORIES.map((cat) => (
           <Link
             key={cat}
-            href={`/?category=${encodeURIComponent(cat.toUpperCase().replace(/ & /g, "_").replace(/ /g, "_"))}`}
+            href={`/search?category=${encodeURIComponent(cat.toUpperCase().replace(/ & /g, "_").replace(/ /g, "_"))}`}
             className="px-3 h-8 flex items-center text-[13px] font-[400] text-[#4A4A45]
                        hover:bg-[#EFEFEB] rounded-md transition-colors whitespace-nowrap"
           >

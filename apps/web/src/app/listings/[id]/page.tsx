@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 
+import { env } from "@sellspace/env/web";
 import { listingsClient } from "@/lib/listings";
 
 import { ActionButtons } from "./_action-buttons";
@@ -64,6 +66,26 @@ export default async function ListingDetailPage({
     listing = await listingsClient.getListing(id);
   } catch {
     notFound();
+  }
+
+  // Check saved state for the current user
+  let savedInitial = false;
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("ss_access_token")?.value;
+    if (token) {
+      const BASE = env.NEXT_PUBLIC_SERVER_URL.replace(/\/$/, "");
+      const savedRes = await fetch(`${BASE}/api/saved`, {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: "no-store",
+      });
+      if (savedRes.ok) {
+        const savedData = (await savedRes.json()) as { saved: { listingId: string }[] };
+        savedInitial = savedData.saved.some((s) => s.listingId === listing.id);
+      }
+    }
+  } catch {
+    // Not logged in or fetch failed — savedInitial stays false
   }
 
   const cond = CONDITION_CONFIG[listing.condition];
@@ -194,7 +216,12 @@ export default async function ListingDetailPage({
 
               {/* Action buttons */}
               <div className="pt-5 pb-5 border-b border-[#E2E2DC]">
-                <ActionButtons listingId={listing.id} listingPrice={listing.price} />
+                <ActionButtons
+                  listingId={listing.id}
+                  listingPrice={listing.price}
+                  sellerId={listing.seller.id}
+                  savedInitial={savedInitial}
+                />
               </div>
 
               {/* Details table */}
