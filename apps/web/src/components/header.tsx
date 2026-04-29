@@ -6,6 +6,7 @@ import {
 import Link from "next/link";
 
 import { HeaderSearchBar } from "./header-search-bar";
+import { MobileNav } from "./mobile-nav";
 
 // ─── Sub nav category labels ─────────────────────────────────────────────────
 
@@ -25,7 +26,7 @@ export default function SiteHeader() {
   return (
     <header>
       {/* ── Top bar ─────────────────────────────────── */}
-      <div className="h-16 bg-[#0D3B2E] px-10 flex items-center gap-6">
+      <div className="h-16 bg-[#0D3B2E] px-5 md:px-10 flex items-center gap-6">
         {/* Logo */}
         <Link href="/" className="shrink-0 text-[24px] leading-none">
           <span
@@ -42,10 +43,13 @@ export default function SiteHeader() {
           </span>
         </Link>
 
-        <HeaderSearchBar />
+        {/* Search — desktop only */}
+        <div className="hidden md:flex flex-1 max-w-[560px]">
+          <HeaderSearchBar />
+        </div>
 
-        {/* Right actions */}
-        <nav className="ml-auto flex items-center gap-1">
+        {/* Right actions — desktop only */}
+        <nav className="hidden md:flex ml-auto items-center gap-1">
           <Link
             href="/saved"
             aria-label="Saved"
@@ -71,10 +75,15 @@ export default function SiteHeader() {
             <UserIcon size={20} color="currentColor" />
           </Link>
         </nav>
+
+        {/* Hamburger — mobile only */}
+        <div className="flex md:hidden ml-auto">
+          <MobileNav />
+        </div>
       </div>
 
-      {/* ── Sub nav ─────────────────────────────────── */}
-      <div className="h-11 bg-white border-b border-[#E2E2DC] px-10 flex items-center gap-1">
+      {/* ── Sub nav — desktop only ───────────────── */}
+      <div className="hidden md:flex h-11 bg-white border-b border-[#E2E2DC] px-10 items-center gap-1">
         <button
           className="flex items-center gap-1 px-3 h-8 rounded-md text-[14px] font-[500]
                      text-[#1A1A18] hover:bg-[#EFEFEB] transition-colors shrink-0"
