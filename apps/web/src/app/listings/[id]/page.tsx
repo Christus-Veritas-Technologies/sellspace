@@ -194,7 +194,7 @@ export default async function ListingDetailPage({
 
               {/* Action buttons */}
               <div className="pt-5 pb-5 border-b border-[#E2E2DC]">
-                <ActionButtons />
+                <ActionButtons listingId={listing.id} listingPrice={listing.price} />
               </div>
 
               {/* Details table */}
