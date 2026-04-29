@@ -10,6 +10,7 @@ import { notificationRoutes } from "./routes/notifications";
 import { offerRoutes } from "./routes/offers";
 import { reportRoutes } from "./routes/reports";
 import { userRoutes } from "./routes/users";
+import { websocket, wsRoutes } from "./routes/ws";
 
 const app = new Hono();
 
@@ -34,4 +35,12 @@ app.route("/api/messages", messageRoutes);
 app.route("/api/notifications", notificationRoutes);
 app.route("/api/reports", reportRoutes);
 
-export default app;
+// ─── WebSocket ────────────────────────────────────────────────────────────────
+
+app.route("/ws", wsRoutes);
+
+// Export as Bun server config so `websocket` handler is registered
+export default {
+  fetch: app.fetch,
+  websocket,
+};

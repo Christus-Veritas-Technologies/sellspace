@@ -8,10 +8,21 @@
     },
     "name": "sellspace",
     "slug": "sellspace",
-    "plugins": ["expo-font"],
+    "plugins": [
+      "expo-font"
+    ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "63d7748c-6843-46af-b11d-07f2b0a7aab0"
+      }
+    },
+    "owner": "johnprime",
+    "android": {
+      "package": "com.johnprime.sellspace"
     }
   }
 }
