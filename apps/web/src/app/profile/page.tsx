@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { ShieldTick01Icon, Settings01Icon, LogoutCircleRightIcon } from "hugeicons-react";
 
 import { env } from "@sellspace/env/web";
 import { ListingCard } from "@sellspace/ui/components/listing-card";
@@ -60,7 +61,7 @@ export default async function ProfilePage() {
 
   return (
     <main className="bg-[#F2F2EF] min-h-screen">
-      <div className="max-w-[860px] mx-auto px-6 py-8 space-y-8">
+      <div className="max-w-[1000px] mx-auto px-6 py-8 space-y-8">
 
         {/* Identity card */}
         <ProfileIdentity
@@ -74,11 +75,73 @@ export default async function ProfilePage() {
           averageRating={averageRating}
         />
 
+        {/* Quick actions */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <Link
+            href="/sell"
+            className="flex items-center justify-center gap-2 px-4 py-3 bg-[#E8621A] text-white rounded-[10px] font-[600] text-[14px] hover:bg-[#C9521A] transition-colors"
+          >
+            List Item
+          </Link>
+          <Link
+            href="/saved"
+            className="flex items-center justify-center gap-2 px-4 py-3 bg-white border border-[#E2E2DC] text-[#1A1A18] rounded-[10px] font-[600] text-[14px] hover:bg-[#EFEFEB] transition-colors"
+          >
+            Saved Items
+          </Link>
+          <Link
+            href="/inbox"
+            className="flex items-center justify-center gap-2 px-4 py-3 bg-white border border-[#E2E2DC] text-[#1A1A18] rounded-[10px] font-[600] text-[14px] hover:bg-[#EFEFEB] transition-colors"
+          >
+            Messages
+          </Link>
+          <Link
+            href="/logout"
+            className="flex items-center justify-center gap-2 px-4 py-3 bg-white border border-[#FEE2E2] text-[#DC2626] rounded-[10px] font-[600] text-[14px] hover:bg-[#FEE2E2] transition-colors"
+          >
+            <LogoutCircleRightIcon size={16} />
+            Log out
+          </Link>
+        </div>
+
+        {/* Account info section */}
+        <div className="bg-white rounded-[14px] border border-[#E2E2DC] p-6 shadow-[0_1px_3px_rgba(26,26,24,0.06)]">
+          <div className="flex items-center gap-2 mb-4">
+            <ShieldTick01Icon size={20} color="#0D3B2E" />
+            <h3 className="text-[16px] font-[700] text-[#1A1A18]">Account Information</h3>
+          </div>
+          <div className="space-y-3">
+            <div className="flex justify-between items-center py-2 border-b border-[#E2E2DC]">
+              <span className="text-[14px] text-[#4A4A45]">Email</span>
+              <span className="text-[14px] font-[500] text-[#1A1A18]">{user.email}</span>
+            </div>
+            {user.city && (
+              <div className="flex justify-between items-center py-2 border-b border-[#E2E2DC]">
+                <span className="text-[14px] text-[#4A4A45]">City</span>
+                <span className="text-[14px] font-[500] text-[#1A1A18]">{user.city}</span>
+              </div>
+            )}
+            <div className="flex justify-between items-center py-2 border-b border-[#E2E2DC]">
+              <span className="text-[14px] text-[#4A4A45]">Member Since</span>
+              <span className="text-[14px] font-[500] text-[#1A1A18]">
+                {new Date(user.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
+              </span>
+            </div>
+            <div className="flex justify-between items-center py-2">
+              <span className="text-[14px] text-[#4A4A45]">Status</span>
+              <div className="flex items-center gap-1 px-2.5 py-1 bg-[#DCFCE7] rounded-full">
+                <ShieldTick01Icon size={14} color="#16A34A" />
+                <span className="text-[12px] font-[600] text-[#16A34A]">Verified</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Active listings */}
         {listings.length > 0 && (
           <section>
-            <h2 className="text-[18px] font-[700] text-[#1A1A18] mb-4" style={{ fontFamily: "'Fraunces', serif" }}>
-              Active Listings
+            <h2 className="text-[20px] font-[700] text-[#1A1A18] mb-4" style={{ fontFamily: "'Fraunces', serif" }}>
+              Active Listings ({listingCount})
             </h2>
             <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-4">
               {listings.map((listing) => (
@@ -98,14 +161,25 @@ export default async function ProfilePage() {
             </div>
           </section>
         )}
+        {listings.length === 0 && (
+          <div className="bg-white rounded-[14px] border border-[#E2E2DC] p-8 text-center">
+            <p className="text-[14px] text-[#8A8A82] mb-4">You haven't listed any items yet.</p>
+            <Link
+              href="/sell"
+              className="inline-block px-6 py-2.5 bg-[#E8621A] text-white rounded-[10px] font-[600] text-[14px] hover:bg-[#C9521A] transition-colors"
+            >
+              Create Your First Listing
+            </Link>
+          </div>
+        )}
 
         {/* Reviews */}
         {reviews.length > 0 && (
           <section>
-            <h2 className="text-[18px] font-[700] text-[#1A1A18] mb-4" style={{ fontFamily: "'Fraunces', serif" }}>
-              Reviews
+            <h2 className="text-[20px] font-[700] text-[#1A1A18] mb-4" style={{ fontFamily: "'Fraunces', serif" }}>
+              Reviews ({reviewCount})
             </h2>
-            <div className="space-y-3">
+            <div className="space-y-3" style={{ maxHeight: "600px", overflowY: "auto" }}>
               {reviews.map((review) => (
                 <div
                   key={review.id}
@@ -122,12 +196,19 @@ export default async function ProfilePage() {
                         {review.reviewer.displayName ?? "User"}
                       </span>
                     </div>
-                    <span className="text-[13px] text-[#F4A61D]">{"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}</span>
+                    <div className="flex items-center gap-0.5">
+                      {Array.from({ length: review.rating }).map((_, i) => (
+                        <span key={i} className="text-[#F4A61D]">★</span>
+                      ))}
+                      {Array.from({ length: 5 - review.rating }).map((_, i) => (
+                        <span key={`empty-${i}`} className="text-[#E2E2DC]">★</span>
+                      ))}
+                    </div>
                   </div>
                   {review.comment && (
-                    <p className="text-[13px] text-[#4A4A45] leading-relaxed">{review.comment}</p>
+                    <p className="text-[13px] text-[#4A4A45] leading-relaxed mb-2">{review.comment}</p>
                   )}
-                  <p className="text-[11px] text-[#8A8A82] mt-1.5">
+                  <p className="text-[11px] text-[#8A8A82]">
                     {new Date(review.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}
                   </p>
                 </div>
@@ -136,18 +217,6 @@ export default async function ProfilePage() {
           </section>
         )}
 
-        {/* Account actions */}
-        <div className="flex justify-end">
-          <Link
-            href="/logout"
-            className="px-5 py-2.5 rounded-[10px] border border-[#FEE2E2] bg-white text-[#DC2626]
-                       text-[14px] font-[600] hover:bg-[#FEE2E2] transition-colors"
-          >
-            Log out
-          </Link>
-        </div>
-
       </div>
     </main>
   );
-}
