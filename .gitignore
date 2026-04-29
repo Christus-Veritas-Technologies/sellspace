@@ -7,6 +7,8 @@ node_modules
 dist
 build
 *.tsbuildinfo
+apps/native/android
+apps/native/ios
 
 # Environment variables
 .env
