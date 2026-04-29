@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { ShieldTick01Icon, Settings01Icon, LogoutCircleRightIcon } from "hugeicons-react";
+import { Shield01Icon, Settings01Icon, LogoutCircle02Icon } from "hugeicons-react";
 
 import { env } from "@sellspace/env/web";
 import { ListingCard } from "@sellspace/ui/components/listing-card";
@@ -99,7 +99,7 @@ export default async function ProfilePage() {
             href="/logout"
             className="flex items-center justify-center gap-2 px-4 py-3 bg-white border border-[#FEE2E2] text-[#DC2626] rounded-[10px] font-[600] text-[14px] hover:bg-[#FEE2E2] transition-colors"
           >
-            <LogoutCircleRightIcon size={16} />
+            <LogoutCircle02Icon size={16} />
             Log out
           </Link>
         </div>
@@ -107,7 +107,7 @@ export default async function ProfilePage() {
         {/* Account info section */}
         <div className="bg-white rounded-[14px] border border-[#E2E2DC] p-6 shadow-[0_1px_3px_rgba(26,26,24,0.06)]">
           <div className="flex items-center gap-2 mb-4">
-            <ShieldTick01Icon size={20} color="#0D3B2E" />
+            <Shield01Icon size={20} color="#0D3B2E" />
             <h3 className="text-[16px] font-[700] text-[#1A1A18]">Account Information</h3>
           </div>
           <div className="space-y-3">
@@ -130,7 +130,7 @@ export default async function ProfilePage() {
             <div className="flex justify-between items-center py-2">
               <span className="text-[14px] text-[#4A4A45]">Status</span>
               <div className="flex items-center gap-1 px-2.5 py-1 bg-[#DCFCE7] rounded-full">
-                <ShieldTick01Icon size={14} color="#16A34A" />
+                <Shield01Icon size={14} color="#16A34A" />
                 <span className="text-[12px] font-[600] text-[#16A34A]">Verified</span>
               </div>
             </div>
@@ -220,3 +220,4 @@ export default async function ProfilePage() {
       </div>
     </main>
   );
+}

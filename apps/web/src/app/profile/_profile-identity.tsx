@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useState } from "react";
-import { Calendar01Icon, HomeIcon, StarIcon } from "hugeicons-react";
+import { Calendar01Icon, Home13Icon, StarIcon } from "hugeicons-react";
 import { AvatarUpload } from "@/components/avatar-upload";
 
 interface Props {
@@ -47,7 +47,7 @@ export function ProfileIdentity({
           <p className="text-[14px] text-[#4A4A45] mt-1">{email}</p>
           {city && (
             <p className="text-[13px] text-[#8A8A82] mt-1 flex items-center gap-1">
-              <HomeIcon size={14} />
+              <Home13Icon size={14} />
               {city}
             </p>
           )}
