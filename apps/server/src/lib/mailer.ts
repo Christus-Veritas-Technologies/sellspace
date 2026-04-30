@@ -1,7 +1,7 @@
 import nodemailer from "nodemailer";
 import { env } from "@sellspace/env/server";
 
-function otpEmailHtml(otp: string): string {
+function otpEmailHtml(otp: string, magicLink: string): string {
   return `<!DOCTYPE html>
 <html>
 <head>
@@ -16,8 +16,15 @@ function otpEmailHtml(otp: string): string {
     .body { padding: 32px; }
     .title { font-size: 16px; font-weight: 600; color: #1A1A18; margin: 0 0 8px; }
     .desc { font-size: 14px; color: #4A4A45; margin: 0 0 24px; }
-    .otp { font-size: 40px; font-weight: 700; letter-spacing: 8px; color: #E8621A; text-align: center; margin: 0 0 24px; padding: 16px; background: #EFEFEB; border-radius: 10px; }
-    .note { font-size: 13px; color: #8A8A82; text-align: center; margin: 0; }
+    .button { display: inline-block; width: 100%; padding: 14px 24px; background: #E8621A; color: #FAFAF8; text-align: center; font-size: 14px; font-weight: 600; border-radius: 10px; text-decoration: none; margin: 0 0 24px; box-sizing: border-box; }
+    .button:hover { background: #C9521A; }
+    .divider { text-align: center; color: #8A8A82; font-size: 13px; margin: 24px 0; }
+    .otp-box { background: #EFEFEB; padding: 16px; border-radius: 10px; margin: 16px 0; }
+    .otp { font-size: 28px; font-weight: 700; letter-spacing: 4px; color: #E8621A; text-align: center; margin: 0; }
+    .otp-label { font-size: 12px; color: #8A8A82; text-align: center; margin: 8px 0 0; }
+    .link-label { font-size: 12px; color: #8A8A82; margin: 0 0 8px; }
+    .link { word-break: break-all; font-size: 12px; color: #0D3B2E; background: #EFEFEB; padding: 8px; border-radius: 6px; display: block; margin: 8px 0; }
+    .note { font-size: 13px; color: #8A8A82; margin: 24px 0 0; }
     .footer { padding: 16px 32px; border-top: 1px solid #E2E2DC; font-size: 12px; color: #8A8A82; text-align: center; }
   </style>
 </head>
@@ -27,10 +34,21 @@ function otpEmailHtml(otp: string): string {
       <p class="logo">sell<span>space</span></p>
     </div>
     <div class="body">
-      <p class="title">Your sign-in code</p>
-      <p class="desc">Use the code below to sign in to your Sellspace account. It expires in <strong>10 minutes</strong>.</p>
-      <div class="otp">${otp}</div>
-      <p class="note">If you didn't request this, you can safely ignore this email.</p>
+      <p class="title">Sign in to Sellspace</p>
+      <p class="desc">Use the button below to sign in to your account. The link expires in <strong>10 minutes</strong>.</p>
+      <a href="${magicLink}" class="button">Sign in with magic link</a>
+      
+      <div class="divider">Or use your code</div>
+      
+      <div class="otp-box">
+        <div class="otp">${otp}</div>
+        <p class="otp-label">Use this code to verify your email</p>
+      </div>
+      
+      <p class="link-label">If the button doesn't work, paste this link in your browser:</p>
+      <div class="link">${magicLink}</div>
+      
+      <p class="note">If you didn't request this sign-in, you can safely ignore this email.</p>
     </div>
     <div class="footer">sellspace.co.zw &middot; Zimbabwe's marketplace</div>
   </div>
@@ -48,11 +66,12 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-export async function sendOtpEmail(to: string, otp: string): Promise<void> {
+export async function sendOtpEmail(to: string, otp: string, magicLink?: string): Promise<void> {
+  const link = magicLink || "";
   await transporter.sendMail({
     from: `"Sellspace" <${env.EMAIL_FROM}>`,
     to,
     subject: `Your Sellspace code: ${otp}`,
-    html: otpEmailHtml(otp),
+    html: otpEmailHtml(otp, link),
   });
 }

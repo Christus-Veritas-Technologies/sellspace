@@ -7,7 +7,7 @@ import db from "@sellspace/db";
 
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from "../lib/jwt";
 import { sendOtpEmail } from "../lib/mailer";
-import { generateOtp } from "../lib/otp";
+import { generateOtp, generateMagicLinkToken } from "../lib/otp";
 import { verifyGoogleIdToken } from "../lib/google";
 
 const OTP_RATE_LIMIT = 3; // max OTPs per email per 10 minutes
@@ -35,12 +35,19 @@ export const authRoutes = new Hono()
       }
 
       const otp = generateOtp();
+      const magicLinkToken = generateMagicLinkToken();
       const otpHash = await bcrypt.hash(otp, BCRYPT_ROUNDS);
       const expiresAt = new Date(Date.now() + OTP_TTL_MS);
 
-      await db.otpRequest.create({ data: { email, otpHash, expiresAt } });
+      // Get the origin from request headers for building the magic link
+      const protocol = c.req.header("x-forwarded-proto") || "http";
+      const host = c.req.header("x-forwarded-host") || c.req.header("host") || "localhost:9999";
+      const origin = `${protocol}://${host}`;
+      const magicLink = `${origin}/api/auth/verify-magic-link?token=${encodeURIComponent(magicLinkToken)}&email=${encodeURIComponent(email)}`;
 
-      await sendOtpEmail(email, otp);
+      await db.otpRequest.create({ data: { email, otpHash, magicLinkToken, expiresAt } });
+
+      await sendOtpEmail(email, otp, magicLink);
 
       return c.json({ message: "OTP sent to your email." });
     },
@@ -155,6 +162,62 @@ export const authRoutes = new Hono()
         console.error("Google callback error:", err instanceof Error ? err.message : String(err));
         return c.json({ error: "Invalid Google token. Please try again." }, 401);
       }
+    },
+  )
+
+  // GET /api/auth/verify-magic-link
+  .get("/verify-magic-link", 
+    async (c) => {
+      const token = c.req.query("token");
+      const email = c.req.query("email");
+
+      if (!token || !email) {
+        return c.json({ error: "Missing token or email." }, 400);
+      }
+
+      const record = await db.otpRequest.findFirst({
+        where: { 
+          email, 
+          magicLinkToken: token,
+          used: false, 
+          expiresAt: { gte: new Date() } 
+        },
+      });
+
+      if (!record) {
+        return c.json({ error: "Invalid or expired magic link." }, 401);
+      }
+
+      // Mark OTP as used
+      await db.otpRequest.update({ where: { id: record.id }, data: { used: true } });
+
+      // Upsert user
+      const user = await db.user.upsert({
+        where: { email },
+        create: { email, displayName: email.split("@")[0] ?? email },
+        update: {},
+      });
+
+      const [accessToken, refreshToken] = await Promise.all([
+        signAccessToken({ sub: user.id }),
+        signRefreshToken({ sub: user.id }),
+      ]);
+
+      // Set secure HTTP-only cookies
+      c.header("Set-Cookie", `ss_access_token=${accessToken}; Path=/; Max-Age=${30 * 24 * 60 * 60}; SameSite=Lax; HttpOnly`);
+      c.header("Set-Cookie", `ss_refresh_token=${refreshToken}; Path=/; Max-Age=${30 * 24 * 60 * 60}; SameSite=Lax; HttpOnly`);
+
+      // Return HTML page that redirects
+      return c.html(`<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="refresh" content="0;url=/" />
+  <title>Signing in...</title>
+</head>
+<body>
+  <p>Signing you in...</p>
+</body>
+</html>`);
     },
   )
 

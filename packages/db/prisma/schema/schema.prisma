@@ -233,12 +233,13 @@ model Notification {
 }
 
 model OtpRequest {
-  id        String   @id @default(cuid())
-  email     String
-  otpHash   String
-  expiresAt DateTime
-  used      Boolean  @default(false)
-  createdAt DateTime @default(now())
+  id                String   @id @default(cuid())
+  email             String
+  otpHash           String
+  magicLinkToken    String?  @unique  // Unique token for magic link verification
+  expiresAt         DateTime
+  used              Boolean  @default(false)
+  createdAt         DateTime @default(now())
 
   userId String?
   user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
