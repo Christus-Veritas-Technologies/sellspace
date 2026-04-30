@@ -185,7 +185,7 @@ export default function SellScreen() {
 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsMultiple: true,
+      allowsEditing: false,
       aspect: [4, 3],
       quality: 0.8,
       selectionLimit: 10 - images.length,
@@ -392,7 +392,7 @@ export default function SellScreen() {
           <Text style={labelStyle}>
             Images <Text style={{ color: colors.accent }}>*</Text>
             <Text style={{ fontFamily: "DMSans_400Regular", color: colors.textMuted }}>
-              {" "}>({images.length}/10)
+              {" "}({images.length}/10)
             </Text>
           </Text>
 

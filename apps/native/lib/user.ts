@@ -9,6 +9,7 @@ export interface UserProfile {
   displayName: string;
   avatarUrl: string | null;
   city: string | null;
+  isPrivate: boolean;
   createdAt: string;
 }
 
@@ -33,6 +34,7 @@ export interface UpdateProfileBody {
   displayName?: string;
   city?: string;
   avatarUrl?: string;
+  isPrivate?: boolean;
 }
 
 // ─── JWT helpers ──────────────────────────────────────────────────────────────

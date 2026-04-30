@@ -1,6 +1,6 @@
 import {
   AmericanFootballIcon,
-  ArrowUpDown01Icon,
+  ArrowUpDownIcon,
   Book01Icon,
   Briefcase01Icon,
   Cancel01Icon,
@@ -166,9 +166,8 @@ export default function BrowseScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-
-      {/* ── Fixed header ─────────────────────────────────────────── */}
+    <>
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <View style={{ backgroundColor: colors.background, paddingBottom: 4 }}>
 
         {/* Title */}
@@ -221,7 +220,7 @@ export default function BrowseScreen() {
               ...shadows.card,
             })}
           >
-            <HugeiconsIcon icon={ArrowUpDown01Icon} size={18} color={sort !== "newest" ? colors.accent : colors.textSecondary} />
+            <HugeiconsIcon icon={ArrowUpDownIcon} size={18} color={sort !== "newest" ? colors.accent : colors.textSecondary} />
           </Pressable>
           <Pressable
             onPress={() => {
@@ -403,5 +402,6 @@ export default function BrowseScreen() {
         </View>
       </View>
     </Modal>
+    </>
   );
 }

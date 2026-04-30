@@ -147,7 +147,7 @@ export default function ListingDetailScreen() {
   const [reviewError, setReviewError] = useState("");
 
   const saveMutation = useMutation({
-    mutationFn: () => (saved ? savedApi.unsave(id) : savedApi.save(id)),
+    mutationFn: async () => (saved ? savedApi.unsave(id) : savedApi.save(id)),
     onSuccess: (data) => setSaved(data.saved),
     onError: (err: Error) => Alert.alert("Error", err.message),
   });
@@ -187,7 +187,7 @@ export default function ListingDetailScreen() {
 
   const reviewMutation = useMutation({
     mutationFn: ({ rating, comment }: { rating: number; comment: string }) =>
-      reviewsApi.submitReview(listing!.sellerId, rating, comment || undefined),
+      reviewsApi.submitReview(listing!.seller.id, rating, comment || undefined),
     onSuccess: () => {
       setShowReviewModal(false);
       setReviewRating(0);

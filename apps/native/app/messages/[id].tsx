@@ -54,8 +54,8 @@ function Bubble({ msg, isMine }: { msg: ChatMessage; isMine: boolean }) {
         style={{
           backgroundColor: isMine ? colors.primary : colors.surface,
           borderRadius: radii.lg,
-          borderBottomRightRadius: isMine ? radii.xs : radii.lg,
-          borderBottomLeftRadius: isMine ? radii.lg : radii.xs,
+          borderBottomRightRadius: isMine ? radii.sm : radii.lg,
+          borderBottomLeftRadius: isMine ? radii.lg : radii.sm,
           paddingHorizontal: spacing[4],
           paddingVertical: spacing[3],
           borderWidth: isMine ? 0 : 1,
@@ -123,7 +123,7 @@ export default function ChatScreen() {
     const incoming = e.message as ChatMessage;
     queryClient.setQueryData(
       ["thread", id],
-      (old: { thread: typeof data.thread } | undefined) => {
+      (old: { thread: NonNullable<typeof data>['thread'] } | undefined) => {
         if (!old) return old;
         return {
           thread: {
@@ -145,7 +145,7 @@ export default function ChatScreen() {
       const { message } = await messagesApi.sendMessage(id, trimmed);
       queryClient.setQueryData(
         ["thread", id],
-        (old: { thread: typeof data.thread } | undefined) => {
+        (old: { thread: NonNullable<typeof data>['thread'] } | undefined) => {
           if (!old) return old;
           return {
             thread: {

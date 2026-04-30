@@ -12,6 +12,7 @@ const updateProfileBody = z.object({
   displayName: z.string().min(2).max(80).optional(),
   city: z.string().max(100).optional(),
   avatarUrl: z.string().url().optional(),
+  isPrivate: z.boolean().optional(),
 });
 
 // ─── Listing image select (first image only) ─────────────────────────────────
@@ -47,6 +48,7 @@ export const userRoutes = new Hono()
         avatarUrl: true,
         city: true,
         email: true,
+        isPrivate: true,
         createdAt: true,
       },
     });
@@ -94,6 +96,21 @@ export const userRoutes = new Hono()
   .get("/:id", async (c) => {
     const { id } = c.req.param();
 
+    // Allow authenticated user to always see their own profile
+    const authHeader = c.req.header("Authorization");
+    let viewerUserId: string | null = null;
+    if (authHeader?.startsWith("Bearer ")) {
+      try {
+        const { jwtVerify } = await import("jose");
+        const { env: sEnv } = await import("@sellspace/env/server");
+        const secret = new TextEncoder().encode(sEnv.JWT_SECRET);
+        const { payload } = await jwtVerify(authHeader.slice(7), secret);
+        viewerUserId = (payload as { sub?: string }).sub ?? null;
+      } catch {
+        // Not authenticated — that's fine for public profiles
+      }
+    }
+
     const user = await db.user.findUnique({
       where: { id },
       select: {
@@ -101,12 +118,18 @@ export const userRoutes = new Hono()
         displayName: true,
         avatarUrl: true,
         city: true,
+        isPrivate: true,
         createdAt: true,
       },
     });
 
     if (!user) {
       return c.json({ error: "User not found" }, 404);
+    }
+
+    // If profile is private and viewer is not the owner, return private signal
+    if (user.isPrivate && viewerUserId !== id) {
+      return c.json({ isPrivate: true, user: { id: user.id } }, 403);
     }
 
     const [listings, listingCount] = await Promise.all([
@@ -163,6 +186,7 @@ export const userRoutes = new Hono()
         avatarUrl: true,
         city: true,
         email: true,
+        isPrivate: true,
         createdAt: true,
       },
     });
