@@ -1,20 +1,3 @@
-import { env } from "@sellspace/env/web";
-
-const BASE_URL = env.NEXT_PUBLIC_SERVER_URL;
-
-async function getAccessToken(): Promise<string | null> {
-  try {
-    const res = await fetch("/api/auth/token");
-    if (res.ok) {
-      const data = (await res.json()) as { token: string };
-      return data.token;
-    }
-  } catch {
-    // Not authenticated
-  }
-  return null;
-}
-
 export interface UploadProfileResult {
   avatarUrl: string;
 }
@@ -26,7 +9,7 @@ export async function uploadProfilePicture(file: File): Promise<UploadProfileRes
   const formData = new FormData();
   formData.append("file", file);
 
-  const res = await fetch(`${BASE_URL}/api/uploads/profile`, {
+  const res = await fetch("/api/uploads/profile", {
     method: "POST",
     body: formData,
   });
@@ -54,7 +37,7 @@ export async function uploadListingImages(
   formData.append("listingId", listingId);
   files.forEach((file) => formData.append("files", file));
 
-  const res = await fetch(`${BASE_URL}/api/uploads/listing`, {
+  const res = await fetch("/api/uploads/listing", {
     method: "POST",
     body: formData,
   });
@@ -71,7 +54,7 @@ export async function uploadListingImages(
  * Delete a listing image
  */
 export async function deleteListingImage(imageId: string): Promise<void> {
-  const res = await fetch(`${BASE_URL}/api/uploads/listing/${imageId}`, {
+  const res = await fetch(`/api/uploads/listing/${imageId}`, {
     method: "DELETE",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ imageId }),
