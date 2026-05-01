@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 
+import { DEFAULT_LISTING_IMAGE_URL } from "@/lib/listing-images";
+
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 interface MessageThread {
@@ -89,11 +91,11 @@ export function InboxClient({
               >
                 {/* Listing thumb */}
                 <div className="w-14 h-14 rounded-[8px] overflow-hidden bg-[#EFEFEB] shrink-0">
-                  {thread.listing.images[0]?.url ? (
-                    <img src={thread.listing.images[0].url} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full bg-[#EFEFEB]" />
-                  )}
+                  <img
+                    src={thread.listing.images[0]?.url ?? DEFAULT_LISTING_IMAGE_URL}
+                    alt=""
+                    className="w-full h-full object-cover"
+                  />
                 </div>
 
                 <div className="flex-1 min-w-0">
@@ -147,11 +149,11 @@ export function InboxClient({
                              hover:border-[#E8621A] transition-colors"
                 >
                   <div className="w-14 h-14 rounded-[8px] overflow-hidden bg-[#EFEFEB] shrink-0">
-                    {offer.listing.images[0]?.url ? (
-                      <img src={offer.listing.images[0].url} alt="" className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full bg-[#EFEFEB]" />
-                    )}
+                    <img
+                      src={offer.listing.images[0]?.url ?? DEFAULT_LISTING_IMAGE_URL}
+                      alt=""
+                      className="w-full h-full object-cover"
+                    />
                   </div>
 
                   <div className="flex-1 min-w-0">

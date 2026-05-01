@@ -6,6 +6,7 @@ import { Calendar01Icon, Home13Icon, StarIcon, ShoppingBag01Icon } from "hugeico
 import { env } from "@sellspace/env/web";
 import { ListingCard } from "@sellspace/ui/components/listing-card";
 import { Avatar } from "@/components/avatar";
+import { getPrimaryListingImage } from "@/lib/listing-images";
 import { formatMembershipDuration } from "@/lib/member-duration";
 import { PrivateProfile } from "../_private-profile";
 
@@ -154,7 +155,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
                 <ListingCard
                   key={listing.id}
                   id={listing.id}
-                  image={listing.images[0]?.url ?? "/placeholder.jpg"}
+                  image={getPrimaryListingImage(listing.images)}
                   condition={listing.condition as never}
                   category={listing.category as never}
                   title={listing.title}

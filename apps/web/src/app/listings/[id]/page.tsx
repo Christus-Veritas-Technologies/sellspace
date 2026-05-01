@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 
 import { env } from "@sellspace/env/web";
+import { DEFAULT_LISTING_IMAGE_URL } from "@/lib/listing-images";
 import { listingsClient } from "@/lib/listings";
 
 import { ActionButtons, OwnerButtons } from "./_action-buttons";
@@ -101,7 +102,7 @@ export default async function ListingDetailPage({
 
   const cond = CONDITION_CONFIG[listing.condition];
   const categoryLabel = CATEGORY_LABELS[listing.category] ?? listing.category;
-  const mainImage = listing.images[0]?.url;
+  const mainImage = listing.images[0]?.url ?? DEFAULT_LISTING_IMAGE_URL;
   const extraImages = listing.images.slice(1);
   const memberYear = listing.seller.createdAt
     ? new Date(listing.seller.createdAt).getFullYear()
@@ -130,15 +131,11 @@ export default async function ListingDetailPage({
           <div>
             <div className="aspect-[16/9] rounded-[10px] overflow-hidden bg-[#EFEFEB]
                             border border-[#E2E2DC]">
-              {mainImage ? (
-                <img
-                  src={mainImage}
-                  alt={listing.title}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full bg-[#EFEFEB]" />
-              )}
+              <img
+                src={mainImage}
+                alt={listing.title}
+                className="w-full h-full object-cover"
+              />
             </div>
 
             {/* Thumbnail strip */}

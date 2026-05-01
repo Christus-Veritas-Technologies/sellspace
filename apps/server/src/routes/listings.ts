@@ -49,7 +49,7 @@ const createListingBody = z.object({
   condition: ConditionEnum,
   category: CategoryEnum,
   city: z.string().max(100).optional(),
-  imageUrls: z.array(z.string().url()).min(1).max(10),
+  imageUrls: z.array(z.string().url()).max(10),
 });
 
 const updateListingBody = createListingBody.partial();

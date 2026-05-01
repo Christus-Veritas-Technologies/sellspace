@@ -1,6 +1,7 @@
 import type { Area } from "react-easy-crop";
 
 const AVATAR_OUTPUT_SIZE = 512;
+const LISTING_OUTPUT_SIZE = 1200;
 
 async function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -16,10 +17,36 @@ export async function createCroppedAvatarFile(
   cropAreaPixels: Area,
   originalFileName: string,
 ): Promise<File> {
+  return createSquareCroppedFile(imageSrc, cropAreaPixels, originalFileName, {
+    outputSize: AVATAR_OUTPUT_SIZE,
+    fallbackBaseName: "avatar",
+  });
+}
+
+export async function createCroppedListingImageFile(
+  imageSrc: string,
+  cropAreaPixels: Area,
+  originalFileName: string,
+): Promise<File> {
+  return createSquareCroppedFile(imageSrc, cropAreaPixels, originalFileName, {
+    outputSize: LISTING_OUTPUT_SIZE,
+    fallbackBaseName: "listing-image",
+  });
+}
+
+async function createSquareCroppedFile(
+  imageSrc: string,
+  cropAreaPixels: Area,
+  originalFileName: string,
+  options: {
+    outputSize: number;
+    fallbackBaseName: string;
+  },
+): Promise<File> {
   const image = await loadImage(imageSrc);
   const canvas = document.createElement("canvas");
-  canvas.width = AVATAR_OUTPUT_SIZE;
-  canvas.height = AVATAR_OUTPUT_SIZE;
+  canvas.width = options.outputSize;
+  canvas.height = options.outputSize;
 
   const context = canvas.getContext("2d");
   if (!context) {
@@ -36,8 +63,8 @@ export async function createCroppedAvatarFile(
     cropAreaPixels.height,
     0,
     0,
-    AVATAR_OUTPUT_SIZE,
-    AVATAR_OUTPUT_SIZE,
+    options.outputSize,
+    options.outputSize,
   );
 
   const blob = await new Promise<Blob | null>((resolve) => {
@@ -48,6 +75,6 @@ export async function createCroppedAvatarFile(
     throw new Error("Unable to prepare the cropped image.");
   }
 
-  const baseName = originalFileName.replace(/\.[^.]+$/, "") || "avatar";
+  const baseName = originalFileName.replace(/\.[^.]+$/, "") || options.fallbackBaseName;
   return new File([blob], `${baseName}.jpg`, { type: "image/jpeg" });
 }

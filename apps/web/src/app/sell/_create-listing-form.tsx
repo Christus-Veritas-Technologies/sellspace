@@ -1,9 +1,11 @@
 "use client";
 
-import { useRef, useTransition, useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
 import { createListing } from "./_actions";
+import { ListingImagesField } from "@/components/listing-images-field";
+import { uploadListingImages } from "@/lib/uploads";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -50,8 +52,7 @@ const selectCls =
 
 export function CreateListingForm() {
   const router = useRouter();
-  const imageInputRef = useRef<HTMLInputElement>(null);
-  
+
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
@@ -59,46 +60,8 @@ export function CreateListingForm() {
   const [category, setCategory] = useState("ELECTRONICS");
   const [city, setCity] = useState("");
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [pending, startTransition] = useTransition();
-
-  function handleImageFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(e.currentTarget.files || []);
-    if (files.length === 0) return;
-
-    // Validate total images
-    if (selectedFiles.length + files.length > 10) {
-      setErrors((e) => ({ ...e, imageUrl: "Maximum 10 images" }));
-      return;
-    }
-
-    // Validate each file
-    for (const file of files) {
-      if (file.size > 5242880) {
-        setErrors((e) => ({ ...e, imageUrl: "Each image must be under 5MB" }));
-        return;
-      }
-      if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-        setErrors((e) => ({ ...e, imageUrl: "Only JPEG, PNG, WebP allowed" }));
-        return;
-      }
-    }
-
-    // Create preview URLs
-    const newPreviews = files.map((f) => URL.createObjectURL(f));
-    setSelectedFiles((prev) => [...prev, ...files]);
-    setImagePreviewUrls((prev) => [...prev, ...newPreviews]);
-    setErrors((e) => ({ ...e, imageUrl: "" }));
-  }
-
-  function removeImage(i: number) {
-    setSelectedFiles((prev) => prev.filter((_, idx) => idx !== i));
-    setImagePreviewUrls((prev) => {
-      prev[i] && URL.revokeObjectURL(prev[i]);
-      return prev.filter((_, idx) => idx !== i);
-    });
-  }
 
   function validate() {
     const errs: Record<string, string> = {};
@@ -106,7 +69,6 @@ export function CreateListingForm() {
     if (description.trim().length < 10) errs.description = "Description must be at least 10 characters.";
     const cents = Math.round(parseFloat(price) * 100);
     if (!price || isNaN(cents) || cents < 1) errs.price = "Enter a valid price.";
-    if (selectedFiles.length < 1) errs.imageUrl = "Add at least one image.";
     return errs;
   }
 
@@ -130,9 +92,12 @@ export function CreateListingForm() {
           condition,
           category,
           city: city.trim() || undefined,
-          files: selectedFiles,
         });
-        // Navigate to listing detail page which will handle image upload
+
+        if (selectedFiles.length > 0) {
+          await uploadListingImages(listing.id, selectedFiles);
+        }
+
         router.push(`/listings/${listing.id}`);
       } catch (err) {
         setErrors({ form: (err as Error).message });
@@ -229,54 +194,12 @@ export function CreateListingForm() {
 
       {/* Images */}
       <div>
-        <Label required>Images</Label>
-        <p className="text-[12px] text-[#8A8A82] mb-2">Upload up to 10 images. Max 5MB each. Formats: JPEG, PNG, WebP.</p>
-
-        {/* Hidden file input */}
-        <input
-          ref={imageInputRef}
-          type="file"
-          multiple
-          accept="image/jpeg,image/png,image/webp"
-          onChange={handleImageFileChange}
-          disabled={pending || selectedFiles.length >= 10}
-          className="hidden"
+        <Label>Images</Label>
+        <ListingImagesField
+          files={selectedFiles}
+          onChange={setSelectedFiles}
+          disabled={pending}
         />
-
-        {/* Upload button */}
-        {selectedFiles.length < 10 && (
-          <button
-            type="button"
-            onClick={() => imageInputRef.current?.click()}
-            disabled={pending}
-            className="w-full h-11 px-4 rounded-[10px] border-2 border-dashed border-[#E2E2DC] 
-                       bg-[#FAFAF8] text-[14px] font-[600] text-[#1A1A18] hover:bg-[#F2F2EF] 
-                       transition-colors disabled:opacity-60 mb-3"
-          >
-            📁 Select images ({selectedFiles.length}/10)
-          </button>
-        )}
-
-        {errors.imageUrl && <p className="text-[12px] text-[#DC2626] mb-2">{errors.imageUrl}</p>}
-
-        {/* Image grid */}
-        {imagePreviewUrls.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {imagePreviewUrls.map((url, i) => (
-              <div key={i} className="relative w-20 h-20 rounded-[8px] overflow-hidden border border-[#E2E2DC] group">
-                <img src={url} alt="" className="w-full h-full object-cover" />
-                <button
-                  type="button"
-                  onClick={() => removeImage(i)}
-                  className="absolute inset-0 w-full h-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xl"
-                  aria-label="Remove image"
-                >
-                  ×
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
 
       {/* Submit */}

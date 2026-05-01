@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Tag01Icon, Bookmark01Icon, Message01Icon, StarIcon, ShoppingBag01Icon } from "hugeicons-react";
 import { ListingCard } from "@sellspace/ui/components/listing-card";
 import { Avatar } from "@/components/avatar";
+import { getPrimaryListingImage } from "@/lib/listing-images";
 import { SavedTab } from "./_saved-tab";
 import { MessagesTab } from "./_messages-tab";
 
@@ -120,7 +121,7 @@ function ListingsPanel({
               <ListingCard
                 key={listing.id}
                 id={listing.id}
-                image={listing.images[0]?.url ?? "/placeholder.jpg"}
+                image={getPrimaryListingImage(listing.images)}
                 condition={listing.condition as never}
                 category={listing.category as never}
                 title={listing.title}

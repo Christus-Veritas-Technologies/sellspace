@@ -4,6 +4,8 @@ import { notFound, redirect } from "next/navigation";
 
 import { env } from "@sellspace/env/web";
 
+import { DEFAULT_LISTING_IMAGE_URL } from "@/lib/listing-images";
+
 import { OfferClient } from "./_offer-client";
 
 const BASE = env.NEXT_PUBLIC_SERVER_URL.replace(/\/$/, "");
@@ -83,11 +85,11 @@ export default async function OfferThreadPage({
         <div className="bg-white rounded-[12px] border border-[#E2E2DC] p-4 flex gap-3 mb-5
                         shadow-[0_1px_3px_rgba(26,26,24,0.06)]">
           <div className="w-14 h-14 rounded-[8px] overflow-hidden bg-[#EFEFEB] shrink-0">
-            {thread.listing.images[0]?.url ? (
-              <img src={thread.listing.images[0].url} alt="" className="w-full h-full object-cover" />
-            ) : (
-              <div className="w-full h-full bg-[#EFEFEB]" />
-            )}
+            <img
+              src={thread.listing.images[0]?.url ?? DEFAULT_LISTING_IMAGE_URL}
+              alt=""
+              className="w-full h-full object-cover"
+            />
           </div>
           <div className="min-w-0">
             <p className="text-[14px] font-[600] text-[#1A1A18] truncate">{thread.listing.title}</p>

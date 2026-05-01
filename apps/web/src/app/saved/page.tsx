@@ -5,6 +5,8 @@ import Link from "next/link";
 import { env } from "@sellspace/env/web";
 import { ListingCard } from "@sellspace/ui/components/listing-card";
 
+import { getPrimaryListingImage } from "@/lib/listing-images";
+
 const BASE = env.NEXT_PUBLIC_SERVER_URL.replace(/\/$/, "");
 
 export default async function SavedPage() {
@@ -65,7 +67,7 @@ export default async function SavedPage() {
               <ListingCard
                 key={listing.id}
                 id={listing.id}
-                image={listing.images[0]?.url ?? "/placeholder.jpg"}
+                image={getPrimaryListingImage(listing.images)}
                 condition={listing.condition as never}
                 category={listing.category as never}
                 title={listing.title}

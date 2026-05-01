@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { ListingCard } from "@sellspace/ui/components/listing-card";
 
+import { getPrimaryListingImage } from "@/lib/listing-images";
 import { listingsClient } from "@/lib/listings";
 import type { Category, Condition } from "@/lib/listings";
 
@@ -82,7 +83,7 @@ export default async function SearchPage({
                   <ListingCard
                     key={listing.id}
                     id={listing.id}
-                    image={listing.images[0]?.url ?? "/placeholder.jpg"}
+                    image={getPrimaryListingImage(listing.images)}
                     condition={listing.condition}
                     category={listing.category}
                     title={listing.title}
