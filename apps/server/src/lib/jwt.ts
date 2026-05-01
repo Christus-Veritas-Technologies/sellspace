@@ -3,6 +3,7 @@ import { env } from "@sellspace/env/server";
 
 const accessSecret = new TextEncoder().encode(env.JWT_SECRET);
 const refreshSecret = new TextEncoder().encode(env.JWT_REFRESH_SECRET);
+const SESSION_DURATION = "30d";
 
 export interface TokenPayload extends JWTPayload {
   sub: string; // userId
@@ -12,7 +13,7 @@ export async function signAccessToken(payload: Pick<TokenPayload, "sub">): Promi
   return new SignJWT(payload)
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
-    .setExpirationTime("15m")
+    .setExpirationTime(SESSION_DURATION)
     .sign(accessSecret);
 }
 
@@ -20,7 +21,7 @@ export async function signRefreshToken(payload: Pick<TokenPayload, "sub">): Prom
   return new SignJWT(payload)
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
-    .setExpirationTime("30d")
+    .setExpirationTime(SESSION_DURATION)
     .sign(refreshSecret);
 }
 
