@@ -60,11 +60,11 @@ export function FilterSidebar() {
   const hasActiveFilters = !!(condition || minPrice || maxPrice || city || (sort && sort !== "newest"));
 
   return (
-    <aside className="w-[220px] shrink-0">
-      <div className="bg-white rounded-[14px] border border-[#E2E2DC] p-5 shadow-[0_1px_3px_rgba(26,26,24,0.06)] sticky top-6">
+    <aside className="w-full lg:w-[240px] lg:shrink-0">
+      <div className="rounded-[14px] border border-[#E2E2DC] bg-white p-4 shadow-[0_1px_3px_rgba(26,26,24,0.06)] sm:p-5 lg:sticky lg:top-6">
 
         {/* Branding */}
-        <Link href="/" className="flex items-center justify-center mb-4 group">
+        <Link href="/" className="mb-4 hidden items-center justify-center group lg:flex">
           <Image
             src="/favicon.png"
             alt="Sellspace"
@@ -74,9 +74,9 @@ export function FilterSidebar() {
             className="rounded-lg group-hover:opacity-80 transition-opacity"
           />
         </Link>
-        <div className="h-px bg-[#E2E2DC] mb-4" />
+        <div className="mb-4 hidden h-px bg-[#E2E2DC] lg:block" />
 
-        <div className="flex items-center justify-between mb-4">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-[15px] font-[700] text-[#1A1A18]" style={{ fontFamily: "'Fraunces', serif" }}>
             Filters
           </h2>
@@ -90,83 +90,85 @@ export function FilterSidebar() {
           )}
         </div>
 
-        {/* Sort */}
-        <div className="mb-5">
-          <label className="block text-[11px] font-[700] text-[#8A8A82] uppercase tracking-wide mb-2">
-            Sort by
-          </label>
-          <select
-            value={sort}
-            onChange={(e) => update("sort", e.target.value)}
-            className="w-full h-9 rounded-[8px] border border-[#E2E2DC] bg-[#F2F2EF] text-[13px] text-[#1A1A18] px-2 focus:outline-none focus:border-[#E8621A]"
-          >
-            {SORT_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>{o.label}</option>
-            ))}
-          </select>
-        </div>
-
-        {/* Condition */}
-        <div className="mb-5">
-          <label className="block text-[11px] font-[700] text-[#8A8A82] uppercase tracking-wide mb-2">
-            Condition
-          </label>
-          <div className="flex flex-col gap-1.5">
-            {CONDITION_OPTIONS.map((o) => (
-              <button
-                key={o.value}
-                onClick={() => update("condition", condition === o.value ? "" : o.value)}
-                className={`text-left px-3 py-1.5 rounded-[8px] text-[13px] font-[500] border transition-colors
-                  ${condition === o.value
-                    ? "bg-[#0D3B2E] text-[#FAFAF8] border-[#0D3B2E]"
-                    : "bg-white text-[#4A4A45] border-[#E2E2DC] hover:bg-[#F2F2EF]"
-                  }`}
-              >
-                {o.label}
-              </button>
-            ))}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+          {/* Sort */}
+          <div>
+            <label className="mb-2 block text-[11px] font-[700] uppercase tracking-wide text-[#8A8A82]">
+              Sort by
+            </label>
+            <select
+              value={sort}
+              onChange={(e) => update("sort", e.target.value)}
+              className="h-9 w-full rounded-[8px] border border-[#E2E2DC] bg-[#F2F2EF] px-2 text-[13px] text-[#1A1A18] focus:outline-none focus:border-[#E8621A]"
+            >
+              {SORT_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
           </div>
-        </div>
 
-        {/* Price range */}
-        <div className="mb-5">
-          <label className="block text-[11px] font-[700] text-[#8A8A82] uppercase tracking-wide mb-2">
-            Price (USD)
-          </label>
-          <div className="flex gap-2">
+          {/* City */}
+          <div>
+            <label className="mb-2 block text-[11px] font-[700] uppercase tracking-wide text-[#8A8A82]">
+              City
+            </label>
             <input
-              type="number"
-              min="0"
-              step="0.01"
-              value={minPrice}
-              onChange={(e) => update("minPrice", e.target.value)}
-              placeholder="Min"
-              className="w-full h-9 px-3 rounded-[8px] border border-[#E2E2DC] bg-[#F2F2EF] text-[13px] text-[#1A1A18] focus:outline-none focus:border-[#E8621A]"
-            />
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              value={maxPrice}
-              onChange={(e) => update("maxPrice", e.target.value)}
-              placeholder="Max"
-              className="w-full h-9 px-3 rounded-[8px] border border-[#E2E2DC] bg-[#F2F2EF] text-[13px] text-[#1A1A18] focus:outline-none focus:border-[#E8621A]"
+              type="text"
+              value={city}
+              onChange={(e) => update("city", e.target.value)}
+              placeholder="e.g. Harare"
+              className="h-9 w-full rounded-[8px] border border-[#E2E2DC] bg-[#F2F2EF] px-3 text-[13px] text-[#1A1A18] focus:outline-none focus:border-[#E8621A]"
             />
           </div>
-        </div>
 
-        {/* City */}
-        <div>
-          <label className="block text-[11px] font-[700] text-[#8A8A82] uppercase tracking-wide mb-2">
-            City
-          </label>
-          <input
-            type="text"
-            value={city}
-            onChange={(e) => update("city", e.target.value)}
-            placeholder="e.g. Harare"
-            className="w-full h-9 px-3 rounded-[8px] border border-[#E2E2DC] bg-[#F2F2EF] text-[13px] text-[#1A1A18] focus:outline-none focus:border-[#E8621A]"
-          />
+          {/* Condition */}
+          <div className="sm:col-span-2 lg:col-span-1">
+            <label className="mb-2 block text-[11px] font-[700] uppercase tracking-wide text-[#8A8A82]">
+              Condition
+            </label>
+            <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 lg:grid-cols-1">
+              {CONDITION_OPTIONS.map((o) => (
+                <button
+                  key={o.value}
+                  onClick={() => update("condition", condition === o.value ? "" : o.value)}
+                  className={`rounded-[8px] border px-3 py-2 text-left text-[13px] font-[500] leading-[1.25] transition-colors
+                    ${condition === o.value
+                      ? "border-[#0D3B2E] bg-[#0D3B2E] text-[#FAFAF8]"
+                      : "border-[#E2E2DC] bg-white text-[#4A4A45] hover:bg-[#F2F2EF]"
+                    }`}
+                >
+                  {o.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Price range */}
+          <div className="sm:col-span-2 lg:col-span-1">
+            <label className="mb-2 block text-[11px] font-[700] uppercase tracking-wide text-[#8A8A82]">
+              Price (USD)
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={minPrice}
+                onChange={(e) => update("minPrice", e.target.value)}
+                placeholder="Min"
+                className="h-9 w-full rounded-[8px] border border-[#E2E2DC] bg-[#F2F2EF] px-3 text-[13px] text-[#1A1A18] focus:outline-none focus:border-[#E8621A]"
+              />
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={maxPrice}
+                onChange={(e) => update("maxPrice", e.target.value)}
+                placeholder="Max"
+                className="h-9 w-full rounded-[8px] border border-[#E2E2DC] bg-[#F2F2EF] px-3 text-[13px] text-[#1A1A18] focus:outline-none focus:border-[#E8621A]"
+              />
+            </div>
+          </div>
         </div>
       </div>
     </aside>

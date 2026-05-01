@@ -53,12 +53,12 @@ export default async function SearchPage({
 
   return (
     <main className="bg-[#F2F2EF] min-h-screen">
-      <div className="max-w-[1280px] mx-auto px-6 md:px-10 py-8">
+      <div className="max-w-[1280px] mx-auto px-4 py-6 sm:px-6 sm:py-8 md:px-10">
 
         {/* Heading row */}
-        <div className="mb-6">
+        <div className="mb-6 sm:mb-7">
           <h1
-            className="text-[28px] font-[700] text-[#1A1A18] mb-1"
+            className="mb-1 text-[24px] font-[700] text-[#1A1A18] sm:text-[28px]"
             style={{ fontFamily: "'Fraunces', Georgia, serif" }}
           >
             {q ? `Results for "${q}"` : "Browse listings"}
@@ -68,7 +68,7 @@ export default async function SearchPage({
           </p>
         </div>
 
-        <div className="flex gap-8 items-start">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:gap-8">
           {/* Filter sidebar */}
           <Suspense>
             <FilterSidebar />
@@ -77,7 +77,7 @@ export default async function SearchPage({
           {/* Results grid */}
           <div className="flex-1 min-w-0">
             {listings.length > 0 ? (
-              <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-4">
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-3 sm:grid-cols-[repeat(auto-fill,minmax(220px,1fr))] sm:gap-4">
                 {listings.map((listing) => (
                   <ListingCard
                     key={listing.id}
@@ -94,7 +94,7 @@ export default async function SearchPage({
                 ))}
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center py-24 text-center">
+              <div className="flex flex-col items-center justify-center py-16 text-center sm:py-24">
                 <p className="text-[17px] font-[600] text-[#1A1A18] mb-2">Nothing found</p>
                 <p className="text-[14px] text-[#8A8A82] mb-5">Try adjusting your filters or search term.</p>
                 <Link
