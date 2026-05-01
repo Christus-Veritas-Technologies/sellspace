@@ -97,4 +97,31 @@ export const listingsClient = {
     if (!res.ok) throw new Error(`Failed to fetch listing ${id}: ${res.status}`);
     return res.json() as Promise<Listing>;
   },
+
+  async updateListing(id: string, input: Partial<Listing>, token: string): Promise<Listing> {
+    const res = await fetch(`${baseUrl()}/api/listings/${id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(input),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error ?? "Failed to update listing");
+    return data as Listing;
+  },
+
+  async deleteListing(id: string, token: string): Promise<void> {
+    const res = await fetch(`${baseUrl()}/api/listings/${id}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (res.status !== 204 && !res.ok) {
+      const data = await res.json();
+      throw new Error(data.error ?? "Failed to delete listing");
+    }
+  },
 };
