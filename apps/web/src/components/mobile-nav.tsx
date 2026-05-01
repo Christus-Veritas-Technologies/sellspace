@@ -3,6 +3,7 @@
 import {
   BookmarkAdd01Icon,
   Cancel01Icon,
+  Home01Icon,
   Menu01Icon,
   Message01Icon,
   UserIcon,
@@ -26,6 +27,7 @@ const SUB_NAV_CATEGORIES = [
 ] as const;
 
 const NAV_LINKS = [
+  { href: "/", label: "Home", Icon: Home01Icon },
   { href: "/saved", label: "Saved", Icon: BookmarkAdd01Icon },
   { href: "/inbox", label: "Inbox", Icon: Message01Icon },
   { href: "/profile", label: "Profile", Icon: UserIcon },
