@@ -72,20 +72,26 @@ export interface ListingsFeedParams {
 
 const baseUrl = () => env.NEXT_PUBLIC_SERVER_URL;
 
+function buildListingsUrl(params?: ListingsFeedParams): string {
+  const url = new URL("/api/listings", baseUrl());
+  if (params) {
+    for (const [key, value] of Object.entries(params) as [string, string | number | undefined][]) {
+      if (value !== undefined) url.searchParams.set(key, String(value));
+    }
+  }
+  return url.toString();
+}
+
+/** Browser-safe version — no Next.js cache annotations. Use in client components with TanStack Query. */
+export async function browserGetListings(params?: ListingsFeedParams): Promise<ListingsFeedResponse> {
+  const res = await fetch(buildListingsUrl(params));
+  if (!res.ok) throw new Error(`Failed to fetch listings: ${res.status}`);
+  return res.json() as Promise<ListingsFeedResponse>;
+}
+
 export const listingsClient = {
   async getListings(params?: ListingsFeedParams): Promise<ListingsFeedResponse> {
-    const url = new URL("/api/listings", baseUrl());
-
-    if (params) {
-      const entries = Object.entries(params) as [string, string | number | undefined][];
-      for (const [key, value] of entries) {
-        if (value !== undefined) {
-          url.searchParams.set(key, String(value));
-        }
-      }
-    }
-
-    const res = await fetch(url.toString(), { next: { revalidate: 60 } });
+    const res = await fetch(buildListingsUrl(params), { next: { revalidate: 60 } });
     if (!res.ok) throw new Error(`Failed to fetch listings: ${res.status}`);
     return res.json() as Promise<ListingsFeedResponse>;
   },

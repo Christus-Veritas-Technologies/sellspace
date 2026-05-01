@@ -16,7 +16,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import type { IconSvgElement } from "@hugeicons/react-native";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import {
   Dimensions,
@@ -218,19 +218,33 @@ export default function HomeScreen() {
   const [activeCategory, setActiveCategory] = useState<Category | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const { data, isLoading, isError, refetch, isRefetching } = useQuery({
+  const PAGE_LIMIT = 15;
+
+  const {
+    data,
+    isLoading,
+    isError,
+    refetch,
+    isRefetching,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  } = useInfiniteQuery({
     queryKey: ["listings", { category: activeCategory, q: searchQuery || undefined }],
-    queryFn: () =>
+    queryFn: ({ pageParam }) =>
       listingsApi.getListings({
         sort: "newest",
-        limit: 20,
+        limit: PAGE_LIMIT,
+        page: pageParam as number,
         ...(activeCategory && { category: activeCategory }),
         ...(searchQuery && { q: searchQuery }),
       }),
+    initialPageParam: 1,
+    getNextPageParam: (last) => (last.hasMore ? last.page + 1 : undefined),
     staleTime: 30_000,
   });
 
-  const listings = data?.listings ?? [];
+  const listings = data?.pages.flatMap((p) => p.listings) ?? [];
 
   // Skeleton placeholders — 4 cards filling 2 columns
   const CARD_GAP = 12;
@@ -310,6 +324,10 @@ export default function HomeScreen() {
           renderItem={renderItem}
           columnWrapperStyle={{ gap: CARD_GAP, paddingHorizontal: H_PADDING }}
           contentContainerStyle={{ gap: CARD_GAP, paddingBottom: 100 }}
+          onEndReached={() => {
+            if (hasNextPage && !isFetchingNextPage) fetchNextPage();
+          }}
+          onEndReachedThreshold={0.3}
           ListHeaderComponent={
             <HomeHeader
               activeCategory={activeCategory}
@@ -317,6 +335,21 @@ export default function HomeScreen() {
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}
             />
+          }
+          ListFooterComponent={
+            isFetchingNextPage ? (
+              <View
+                style={{
+                  flexDirection: "row",
+                  gap: CARD_GAP,
+                  paddingHorizontal: H_PADDING,
+                  paddingTop: CARD_GAP,
+                }}
+              >
+                <SkeletonCard width={cardWidth} />
+                <SkeletonCard width={cardWidth} />
+              </View>
+            ) : null
           }
           ListEmptyComponent={
             <View style={{ alignItems: "center", paddingTop: spacing[10] }}>

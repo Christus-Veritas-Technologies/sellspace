@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useInfiniteQuery } from "@tanstack/react-query";
 
 import {
   Briefcase09Icon,
@@ -21,13 +22,13 @@ import { cn } from "@sellspace/ui/lib/utils";
 
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getPrimaryListingImage } from "@/lib/listing-images";
-import type { Category, Listing } from "@/lib/listings";
+import { browserGetListings } from "@/lib/listings";
+import type { Category } from "@/lib/listings";
 
-type HomeListingsBrowserProps = {
-  listings: Listing[];
-};
+// ─── Constants ────────────────────────────────────────────────────────────────
 
 const ALL_CATEGORY = "ALL";
+const PAGE_LIMIT = 15;
 
 const categories = [
   { label: "All", icon: GridIcon, value: ALL_CATEGORY },
@@ -47,18 +48,59 @@ const categories = [
   value: Category | typeof ALL_CATEGORY;
 }>;
 
-function getFilteredListings(listings: Listing[], activeCategory: Category | typeof ALL_CATEGORY) {
-  if (activeCategory === ALL_CATEGORY) {
-    return listings;
-  }
+// ─── Skeleton card ────────────────────────────────────────────────────────────
 
-  return listings.filter((listing) => listing.category === activeCategory);
+function SkeletonCard() {
+  return (
+    <div className="rounded-[10px] overflow-hidden border border-[#E2E2DC] bg-white animate-pulse">
+      <div className="bg-[#E2E2DC] aspect-[4/3] w-full" />
+      <div className="p-3 space-y-2">
+        <div className="h-3 bg-[#E2E2DC] rounded w-1/3" />
+        <div className="h-4 bg-[#E2E2DC] rounded w-4/5" />
+        <div className="h-4 bg-[#E2E2DC] rounded w-2/3" />
+        <div className="h-5 bg-[#E2E2DC] rounded w-1/3 mt-1" />
+      </div>
+    </div>
+  );
 }
 
-export function HomeListingsBrowser({ listings }: HomeListingsBrowserProps) {
+// ─── Browser ──────────────────────────────────────────────────────────────────
+
+export function HomeListingsBrowser() {
   const [activeCategory, setActiveCategory] = useState<Category | typeof ALL_CATEGORY>(ALL_CATEGORY);
-  const filteredListings = getFilteredListings(listings, activeCategory);
-  const activeCategoryLabel = categories.find((category) => category.value === activeCategory)?.label ?? "All";
+  const activeCategoryLabel = categories.find((c) => c.value === activeCategory)?.label ?? "All";
+
+  const { data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage } = useInfiniteQuery({
+    queryKey: ["home-listings", activeCategory],
+    queryFn: ({ pageParam }) =>
+      browserGetListings({
+        sort: "newest",
+        limit: PAGE_LIMIT,
+        page: pageParam as number,
+        ...(activeCategory !== ALL_CATEGORY ? { category: activeCategory as Category } : {}),
+      }),
+    initialPageParam: 1,
+    getNextPageParam: (last) => (last.hasMore ? last.page + 1 : undefined),
+    staleTime: 30_000,
+  });
+
+  const listings = data?.pages.flatMap((p) => p.listings) ?? [];
+
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && hasNextPage && !isFetchingNextPage) {
+          void fetchNextPage();
+        }
+      },
+      { rootMargin: "200px" },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   return (
     <Tabs
@@ -123,23 +165,38 @@ export function HomeListingsBrowser({ listings }: HomeListingsBrowserProps) {
           </a>
         </div>
 
-        {filteredListings.length > 0 ? (
+        {isLoading ? (
           <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-4">
-            {filteredListings.map((listing) => (
-              <ListingCard
-                key={listing.id}
-                id={listing.id}
-                image={getPrimaryListingImage(listing.images)}
-                condition={listing.condition}
-                category={listing.category}
-                title={listing.title}
-                sellerName={listing.seller.displayName ?? "Seller"}
-                city={listing.seller.city ?? listing.city ?? "Zimbabwe"}
-                price={listing.price}
-                href={`/listings/${listing.id}`}
-              />
+            {Array.from({ length: PAGE_LIMIT }).map((_, i) => (
+              <SkeletonCard key={i} />
             ))}
           </div>
+        ) : listings.length > 0 ? (
+          <>
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-4">
+              {listings.map((listing) => (
+                <ListingCard
+                  key={listing.id}
+                  id={listing.id}
+                  image={getPrimaryListingImage(listing.images)}
+                  condition={listing.condition}
+                  category={listing.category}
+                  title={listing.title}
+                  sellerName={listing.seller.displayName ?? "Seller"}
+                  city={listing.seller.city ?? listing.city ?? "Zimbabwe"}
+                  price={listing.price}
+                  href={`/listings/${listing.id}`}
+                />
+              ))}
+            </div>
+
+            {/* Infinite scroll sentinel */}
+            <div ref={sentinelRef} className="mt-8 flex h-12 items-center justify-center">
+              {isFetchingNextPage && (
+                <div className="h-6 w-6 rounded-full border-2 border-[#E8621A] border-t-transparent animate-spin" />
+              )}
+            </div>
+          </>
         ) : (
           <div className="rounded-[10px] border border-[#E2E2DC] bg-[#FAFAF8] py-16 text-center text-[14px] text-[#8A8A82]">
             No listings in {activeCategoryLabel} yet.
