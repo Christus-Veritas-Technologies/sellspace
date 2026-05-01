@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Toaster } from "@sellspace/ui/components/sonner";
 
 import { env } from "@sellspace/env/web";
+import { AuthDialogProvider } from "@/contexts/auth-dialog-context";
 import { ThemeProvider } from "./theme-provider";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
@@ -15,7 +16,9 @@ export default function Providers({ children }: { children: React.ReactNode }) {
     <GoogleOAuthProvider clientId={env.NEXT_PUBLIC_GOOGLE_CLIENT_ID}>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider attribute="class" defaultTheme="light" disableTransitionOnChange>
-          {children}
+          <AuthDialogProvider>
+            {children}
+          </AuthDialogProvider>
           <Toaster richColors />
         </ThemeProvider>
       </QueryClientProvider>

@@ -7,7 +7,7 @@ import { useMutation } from "@tanstack/react-query";
 
 import { authClient } from "@/lib/auth-client";
 
-export function GoogleSignInButton() {
+export function GoogleSignInButton({ onSuccess: onSuccessProp }: { onSuccess?: () => void } = {}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [error, setError] = useState("");
@@ -24,8 +24,12 @@ export function GoogleSignInButton() {
           refreshToken: data.refreshToken,
         }),
       });
-      const redirect = searchParams.get("redirect") ?? "/";
-      router.replace(redirect);
+      if (onSuccessProp) {
+        onSuccessProp();
+      } else {
+        const redirect = searchParams.get("redirect") ?? "/";
+        router.replace(redirect);
+      }
     },
     onError: (err: Error) => {
       setError(err.message);
