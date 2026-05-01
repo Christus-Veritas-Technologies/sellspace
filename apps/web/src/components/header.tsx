@@ -1,3 +1,5 @@
+"use client";
+
 import {
   BookmarkAdd01Icon,
   Message01Icon,
@@ -6,6 +8,8 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 
+import { useAuthDialog } from "@/contexts/auth-dialog-context";
+import { useSession } from "@/lib/use-session";
 import { HeaderSearchBar } from "./header-search-bar";
 import { MobileNav } from "./mobile-nav";
 
@@ -24,6 +28,12 @@ const SUB_NAV_CATEGORIES = [
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export default function SiteHeader() {
+  const { isAuthenticated } = useSession();
+  const { openAuthDialog } = useAuthDialog();
+
+  const navBtnClass =
+    "w-10 h-10 flex items-center justify-center rounded-full text-white hover:bg-white/10 transition-colors";
+
   return (
     <header>
       {/* ── Top bar ─────────────────────────────────── */}
@@ -52,30 +62,33 @@ export default function SiteHeader() {
 
         {/* Right actions — desktop only */}
         <nav className="hidden md:flex ml-auto items-center gap-1">
-          <Link
-            href="/saved"
-            aria-label="Saved"
-            className="w-10 h-10 flex items-center justify-center rounded-full
-                       text-white hover:bg-white/10 transition-colors"
-          >
-            <BookmarkAdd01Icon size={20} color="currentColor" />
-          </Link>
-          <Link
-            href="/inbox"
-            aria-label="Inbox"
-            className="w-10 h-10 flex items-center justify-center rounded-full
-                       text-white hover:bg-white/10 transition-colors"
-          >
-            <Message01Icon size={20} color="currentColor" />
-          </Link>
-          <Link
-            href="/profile"
-            aria-label="Profile"
-            className="w-10 h-10 flex items-center justify-center rounded-full
-                       text-white hover:bg-white/10 transition-colors"
-          >
-            <UserIcon size={20} color="currentColor" />
-          </Link>
+          {isAuthenticated ? (
+            <Link href="/saved" aria-label="Saved" className={navBtnClass}>
+              <BookmarkAdd01Icon size={20} color="currentColor" />
+            </Link>
+          ) : (
+            <button onClick={openAuthDialog} aria-label="Saved" className={navBtnClass}>
+              <BookmarkAdd01Icon size={20} color="currentColor" />
+            </button>
+          )}
+          {isAuthenticated ? (
+            <Link href="/inbox" aria-label="Inbox" className={navBtnClass}>
+              <Message01Icon size={20} color="currentColor" />
+            </Link>
+          ) : (
+            <button onClick={openAuthDialog} aria-label="Inbox" className={navBtnClass}>
+              <Message01Icon size={20} color="currentColor" />
+            </button>
+          )}
+          {isAuthenticated ? (
+            <Link href="/profile" aria-label="Profile" className={navBtnClass}>
+              <UserIcon size={20} color="currentColor" />
+            </Link>
+          ) : (
+            <button onClick={openAuthDialog} aria-label="Profile" className={navBtnClass}>
+              <UserIcon size={20} color="currentColor" />
+            </button>
+          )}
         </nav>
 
         {/* Hamburger — mobile only */}
