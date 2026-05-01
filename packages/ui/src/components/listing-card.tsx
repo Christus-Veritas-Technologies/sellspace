@@ -1,5 +1,6 @@
+"use client";
+
 import { Bookmark03Icon } from "hugeicons-react";
-import * as React from "react";
 
 import { cn } from "@sellspace/ui/lib/utils";
 
