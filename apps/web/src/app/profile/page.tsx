@@ -64,7 +64,7 @@ export default async function ProfilePage() {
           email={user.email}
           city={user.city}
           avatarUrl={user.avatarUrl}
-          memberYear={new Date(user.createdAt).getFullYear()}
+          memberSince={user.createdAt}
           listingCount={listingCount}
           reviewCount={reviewCount}
           averageRating={averageRating}

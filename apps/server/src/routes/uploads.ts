@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import { zValidator } from "@hono/zod-validator";
+import sharp from "sharp";
 
 import db from "@sellspace/db";
 import { requireAuth } from "@/middleware/auth";
@@ -36,7 +37,14 @@ app.post(
       return c.json({ error: "Invalid file type. Must be JPEG, PNG, or WebP" }, 400);
     }
 
+    const publicOrigin = new URL(c.req.url).origin;
+
     try {
+      const normalizedBuffer = await sharp(Buffer.from(buffer))
+        .resize(512, 512, { fit: "cover", position: "centre" })
+        .jpeg({ quality: 90 })
+        .toBuffer();
+
       // Delete old avatar if exists
       const user = await db.user.findUnique({ where: { id: userId } });
       if (user?.avatarUrl) {
@@ -51,12 +59,13 @@ app.post(
       }
 
       // Upload new avatar
-      const key = generateR2Key("avatars", file.name);
+      const avatarFileName = `${file.name.replace(/\.[^.]+$/, "") || "avatar"}.jpg`;
+      const key = generateR2Key("avatars", avatarFileName);
       const url = await uploadToR2({
         key,
-        contentType: file.type,
-        buffer: Buffer.from(buffer),
-      });
+        contentType: "image/jpeg",
+        buffer: normalizedBuffer,
+      }, publicOrigin);
 
       // Update user
       const updated = await db.user.update({
@@ -98,6 +107,8 @@ app.post(
       return c.json({ error: "Listing not found or unauthorized" }, 404);
     }
 
+    const publicOrigin = new URL(c.req.url).origin;
+
     try {
       const urls: string[] = [];
 
@@ -121,7 +132,7 @@ app.post(
           key,
           contentType: file.type,
           buffer: Buffer.from(buffer),
-        });
+        }, publicOrigin);
 
         urls.push(url);
       }

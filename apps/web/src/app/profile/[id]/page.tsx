@@ -6,6 +6,7 @@ import { Calendar01Icon, Home13Icon, StarIcon, ShoppingBag01Icon } from "hugeico
 import { env } from "@sellspace/env/web";
 import { ListingCard } from "@sellspace/ui/components/listing-card";
 import { Avatar } from "@/components/avatar";
+import { formatMembershipDuration } from "@/lib/member-duration";
 import { PrivateProfile } from "../_private-profile";
 
 const BASE = env.NEXT_PUBLIC_SERVER_URL.replace(/\/$/, "");
@@ -71,7 +72,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
   };
 
   const { user, listings, listingCount, reviews, reviewCount, averageRating } = data;
-  const memberYears = new Date().getFullYear() - new Date(user.createdAt).getFullYear();
+  const memberDuration = formatMembershipDuration(user.createdAt);
 
   return (
     <main className="bg-[#F2F2EF] min-h-screen">
@@ -98,7 +99,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
                   )}
                   <span className="flex items-center gap-1 text-[13px] text-[#8A8A82]">
                     <Calendar01Icon size={13} />
-                    Member for {memberYears} {memberYears === 1 ? "year" : "years"}
+                    Member for {memberDuration}
                   </span>
                 </div>
               </div>

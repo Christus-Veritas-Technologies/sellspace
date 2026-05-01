@@ -1,7 +1,46 @@
 import { env } from "@sellspace/env/native";
-import { tokenStorage } from "./auth";
+import { authApi, tokenStorage } from "./auth";
 
 const BASE = env.EXPO_PUBLIC_SERVER_URL;
+
+async function authorizedFetch(path: string, init: RequestInit): Promise<Response> {
+  const makeHeaders = (token: string | null) => {
+    const headers = new Headers(init.headers);
+    if (token) {
+      headers.set("Authorization", `Bearer ${token}`);
+    }
+    return headers;
+  };
+
+  const accessToken = await tokenStorage.getAccessToken();
+  let res = await fetch(`${BASE}${path}`, {
+    ...init,
+    headers: makeHeaders(accessToken),
+  });
+
+  if (res.status !== 401) {
+    return res;
+  }
+
+  const refreshToken = await tokenStorage.getRefreshToken();
+  if (!refreshToken) {
+    return res;
+  }
+
+  try {
+    const refresh = await authApi.refresh(refreshToken);
+    await tokenStorage.setTokens(refresh.accessToken, refreshToken);
+
+    res = await fetch(`${BASE}${path}`, {
+      ...init,
+      headers: makeHeaders(refresh.accessToken),
+    });
+  } catch {
+    return res;
+  }
+
+  return res;
+}
 
 /**
  * Upload a profile picture to the server
@@ -16,14 +55,11 @@ export async function uploadProfilePictureNative(
   // Read file and append as blob
   const response = await fetch(fileUri);
   const blob = await response.blob();
-  formData.append("file", blob, fileName);
+  const uploadBlob = blob.type ? blob : new Blob([blob], { type: mimeType });
+  formData.append("file", uploadBlob, fileName);
 
-  const token = await tokenStorage.getAccessToken();
-  const res = await fetch(`${BASE}/api/uploads/profile`, {
+  const res = await authorizedFetch("/api/uploads/profile", {
     method: "POST",
-    headers: {
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
     body: formData,
   });
 
@@ -53,12 +89,8 @@ export async function uploadListingImagesNative(
     formData.append("files", blob, fileNames[i]);
   }
 
-  const token = await tokenStorage.getAccessToken();
-  const res = await fetch(`${BASE}/api/uploads/listing`, {
+  const res = await authorizedFetch("/api/uploads/listing", {
     method: "POST",
-    headers: {
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
     body: formData,
   });
 
@@ -74,12 +106,10 @@ export async function uploadListingImagesNative(
  * Delete a listing image
  */
 export async function deleteListingImageNative(imageId: string): Promise<void> {
-  const token = await tokenStorage.getAccessToken();
-  const res = await fetch(`${BASE}/api/uploads/listing/${imageId}`, {
+  const res = await authorizedFetch(`/api/uploads/listing/${imageId}`, {
     method: "DELETE",
     headers: {
       "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     body: JSON.stringify({ imageId }),
   });

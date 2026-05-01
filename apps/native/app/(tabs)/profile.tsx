@@ -438,10 +438,11 @@ export default function ProfileScreen() {
     });
     if (result.canceled || !result.assets[0]) return;
     const asset = result.assets[0];
-    const fileName = asset.uri.split("/").pop() ?? `avatar-${Date.now()}.jpg`;
+    const fileName = asset.fileName ?? asset.uri.split("/").pop() ?? `avatar-${Date.now()}.jpg`;
+    const mimeType = asset.mimeType ?? "image/jpeg";
     try {
       setAvatarUploading(true);
-      await uploadProfilePictureNative(asset.uri, fileName, "image/jpeg");
+      await uploadProfilePictureNative(asset.uri, fileName, mimeType);
       queryClient.invalidateQueries({ queryKey: ["profile", userId] });
     } catch (err) {
       Alert.alert("Upload failed", (err as Error).message);

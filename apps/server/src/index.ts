@@ -12,6 +12,7 @@ import { reportRoutes } from "./routes/reports";
 import { reviewRoutes } from "./routes/reviews";
 import { savedRoutes } from "./routes/saved";
 import { userRoutes } from "./routes/users";
+import { resolveLocalUploadPath } from "./lib/r2";
 import { uploadRoutes } from "./routes/uploads";
 import { websocket, wsRoutes } from "./routes/ws";
 
@@ -28,6 +29,22 @@ app.use(
 );
 
 app.get("/", (c) => c.text("OK"));
+
+app.get("/uploads/*", async (c) => {
+  const uploadKey = decodeURIComponent(c.req.path.replace(/^\/uploads\//, ""));
+  const filePath = resolveLocalUploadPath(uploadKey);
+  if (!filePath) return c.notFound();
+
+  const file = Bun.file(filePath);
+  if (!(await file.exists())) return c.notFound();
+
+  return new Response(file, {
+    headers: {
+      "Content-Type": file.type || "application/octet-stream",
+      "Cache-Control": "public, max-age=31536000, immutable",
+    },
+  });
+});
 
 // ─── API routes ───────────────────────────────────────────────────────────────
 

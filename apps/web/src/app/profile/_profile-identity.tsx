@@ -12,6 +12,7 @@ import {
   UserSharingIcon,
 } from "hugeicons-react";
 import { AvatarUpload } from "@/components/avatar-upload";
+import { formatMembershipDuration } from "@/lib/member-duration";
 import { profileApi } from "@/lib/profile-api";
 
 interface Props {
@@ -20,7 +21,7 @@ interface Props {
   email: string;
   city: string | null;
   avatarUrl: string | null;
-  memberYear: number;
+  memberSince: string;
   listingCount: number;
   reviewCount: number;
   averageRating: number | null;
@@ -29,7 +30,7 @@ interface Props {
 }
 
 export function ProfileIdentity(props: Props) {
-  const { email, memberYear, listingCount, reviewCount, averageRating, token } = props;
+  const { email, memberSince, listingCount, reviewCount, averageRating, token } = props;
 
   const [avatarUrl, setAvatarUrl] = useState(props.avatarUrl);
   const [displayName, setDisplayNameState] = useState(props.displayName);
@@ -42,7 +43,7 @@ export function ProfileIdentity(props: Props) {
   const [saving, startSave] = useTransition();
   const [privacySaving, startPrivacySave] = useTransition();
 
-  const memberYears = new Date().getFullYear() - memberYear;
+  const memberDuration = formatMembershipDuration(memberSince);
 
   function openEdit() {
     setNameInput(displayName ?? "");
@@ -121,7 +122,7 @@ export function ProfileIdentity(props: Props) {
               )}
               <span className="flex items-center gap-1 text-[13px] text-[#8A8A82]">
                 <Calendar01Icon size={13} />
-                Member for {memberYears} {memberYears === 1 ? "year" : "years"}
+                Member for {memberDuration}
               </span>
             </div>
 
