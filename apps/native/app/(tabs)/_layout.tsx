@@ -11,6 +11,8 @@ import { Tabs } from "expo-router";
 import { Pressable, Text, View } from "react-native";
 
 import { colors, shadows } from "@sellspace/ui/theme";
+import { useAuth } from "@/contexts/auth-context";
+import { useAuthDialog } from "@/contexts/auth-dialog-context";
 import { useUnreadCount } from "@/lib/notifications";
 
 // ─── Sell FAB button (center tab) ─────────────────────────────────────────────
@@ -102,6 +104,9 @@ function InboxIcon({ focused }: { focused: boolean }) {
 // ─── Layout ───────────────────────────────────────────────────────────────────
 
 export default function TabsLayout() {
+  const { isSignedIn } = useAuth();
+  const { openAuthDialog } = useAuthDialog();
+
   return (
     <Tabs
       screenOptions={{
@@ -142,6 +147,14 @@ export default function TabsLayout() {
           title: "",
           tabBarButton: (props) => <SellFabButton {...props} />,
         }}
+        listeners={{
+          tabPress: (e) => {
+            if (!isSignedIn) {
+              e.preventDefault();
+              openAuthDialog();
+            }
+          },
+        }}
       />
       <Tabs.Screen
         name="inbox"
@@ -149,12 +162,28 @@ export default function TabsLayout() {
           title: "Inbox",
           tabBarIcon: ({ focused }) => <InboxIcon focused={focused} />,
         }}
+        listeners={{
+          tabPress: (e) => {
+            if (!isSignedIn) {
+              e.preventDefault();
+              openAuthDialog();
+            }
+          },
+        }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: "Profile",
           tabBarIcon: ({ focused }) => tabIcon(UserIcon, focused),
+        }}
+        listeners={{
+          tabPress: (e) => {
+            if (!isSignedIn) {
+              e.preventDefault();
+              openAuthDialog();
+            }
+          },
         }}
       />
     </Tabs>
