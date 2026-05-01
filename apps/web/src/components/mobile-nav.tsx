@@ -10,7 +10,7 @@ import {
 } from "hugeicons-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, type MouseEvent } from "react";
 
 import { useAuthDialog } from "@/contexts/auth-dialog-context";
 import { useSession } from "@/lib/use-session";
@@ -43,6 +43,17 @@ export function MobileNav() {
   const [open, setOpen] = useState(false);
   const { isAuthenticated } = useSession();
   const { openAuthDialog } = useAuthDialog();
+
+  function handleProtectedLinkClick(event: MouseEvent<HTMLAnchorElement>) {
+    if (isAuthenticated) {
+      setOpen(false);
+      return;
+    }
+
+    event.preventDefault();
+    openAuthDialog();
+    setOpen(false);
+  }
 
   return (
     <>
@@ -111,23 +122,11 @@ export function MobileNav() {
             const needsAuth = PROTECTED_HREFS.has(href);
             const linkClass =
               "flex items-center gap-3 px-3 py-2.5 rounded-lg text-[14px] font-[500] text-[#1A1A18] hover:bg-[#EFEFEB] transition-colors w-full text-left";
-            if (needsAuth && !isAuthenticated) {
-              return (
-                <button
-                  key={href}
-                  onClick={() => { openAuthDialog(); setOpen(false); }}
-                  className={linkClass}
-                >
-                  <Icon size={18} color="#4A4A45" />
-                  {label}
-                </button>
-              );
-            }
             return (
               <Link
                 key={href}
                 href={href}
-                onClick={() => setOpen(false)}
+                onClick={needsAuth ? handleProtectedLinkClick : () => setOpen(false)}
                 className={linkClass}
               >
                 <Icon size={18} color="#4A4A45" />
@@ -158,26 +157,15 @@ export function MobileNav() {
 
         {/* Sell CTA */}
         <div className="px-4 py-4 border-t border-[#E2E2DC]">
-          {isAuthenticated ? (
-            <Link
-              href="/sell"
-              onClick={() => setOpen(false)}
-              className="flex items-center justify-center w-full h-10 rounded-lg
-                         bg-[#E8621A] text-white text-[14px] font-[600]
-                         hover:bg-[#C9521A] transition-colors"
-            >
-              + List an item
-            </Link>
-          ) : (
-            <button
-              onClick={() => { openAuthDialog(); setOpen(false); }}
-              className="flex items-center justify-center w-full h-10 rounded-lg
-                         bg-[#E8621A] text-white text-[14px] font-[600]
-                         hover:bg-[#C9521A] transition-colors"
-            >
-              + List an item
-            </button>
-          )}
+          <Link
+            href="/sell"
+            onClick={handleProtectedLinkClick}
+            className="flex items-center justify-center w-full h-10 rounded-lg
+                       bg-[#E8621A] text-white text-[14px] font-[600]
+                       hover:bg-[#C9521A] transition-colors"
+          >
+            + List an item
+          </Link>
         </div>
       </div>
     </>

@@ -7,6 +7,7 @@ import {
 } from "hugeicons-react";
 import Image from "next/image";
 import Link from "next/link";
+import type { MouseEvent } from "react";
 
 import { useAuthDialog } from "@/contexts/auth-dialog-context";
 import { useSession } from "@/lib/use-session";
@@ -33,6 +34,15 @@ export default function SiteHeader() {
 
   const navBtnClass =
     "w-10 h-10 flex items-center justify-center rounded-full text-white hover:bg-white/10 transition-colors";
+
+  function handleProtectedLinkClick(event: MouseEvent<HTMLAnchorElement>) {
+    if (isAuthenticated) {
+      return;
+    }
+
+    event.preventDefault();
+    openAuthDialog();
+  }
 
   return (
     <header>
@@ -62,33 +72,15 @@ export default function SiteHeader() {
 
         {/* Right actions — desktop only */}
         <nav className="hidden md:flex ml-auto items-center gap-1">
-          {isAuthenticated ? (
-            <Link href="/saved" aria-label="Saved" className={navBtnClass}>
-              <BookmarkAdd01Icon size={20} color="currentColor" />
-            </Link>
-          ) : (
-            <button onClick={openAuthDialog} aria-label="Saved" className={navBtnClass}>
-              <BookmarkAdd01Icon size={20} color="currentColor" />
-            </button>
-          )}
-          {isAuthenticated ? (
-            <Link href="/inbox" aria-label="Inbox" className={navBtnClass}>
-              <Message01Icon size={20} color="currentColor" />
-            </Link>
-          ) : (
-            <button onClick={openAuthDialog} aria-label="Inbox" className={navBtnClass}>
-              <Message01Icon size={20} color="currentColor" />
-            </button>
-          )}
-          {isAuthenticated ? (
-            <Link href="/profile" aria-label="Profile" className={navBtnClass}>
-              <UserIcon size={20} color="currentColor" />
-            </Link>
-          ) : (
-            <button onClick={openAuthDialog} aria-label="Profile" className={navBtnClass}>
-              <UserIcon size={20} color="currentColor" />
-            </button>
-          )}
+          <Link href="/saved" onClick={handleProtectedLinkClick} aria-label="Saved" className={navBtnClass}>
+            <BookmarkAdd01Icon size={20} color="currentColor" />
+          </Link>
+          <Link href="/inbox" onClick={handleProtectedLinkClick} aria-label="Inbox" className={navBtnClass}>
+            <Message01Icon size={20} color="currentColor" />
+          </Link>
+          <Link href="/profile" onClick={handleProtectedLinkClick} aria-label="Profile" className={navBtnClass}>
+            <UserIcon size={20} color="currentColor" />
+          </Link>
         </nav>
 
         {/* Hamburger — mobile only */}
