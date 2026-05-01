@@ -2,12 +2,14 @@ import {
   ArrowLeft01Icon,
   Bookmark01Icon,
   BookmarkAdd01Icon,
+  Delete01Icon,
+  Edit01Icon,
   FavouriteIcon,
   Flag01Icon,
   StarIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import {
@@ -32,6 +34,7 @@ import { reviewsApi } from "@/lib/reviews";
 import { savedApi } from "@/lib/saved";
 import type { Condition, Category } from "@/lib/listings";
 import { listingsApi } from "@/lib/listings";
+import { useAuth } from "@/contexts/auth-context";
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
@@ -122,13 +125,17 @@ function StarRow({ rating, size = 14 }: { rating: number; size?: number }) {
 
 export default function ListingDetailScreen() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { userId, isSignedIn } = useAuth();
 
-  const { data: listing, isLoading, isError, refetch } = useQuery({
+  const { data: listing, isLoading, isError } = useQuery({
     queryKey: ["listing", id],
     queryFn: () => listingsApi.getListing(id),
     enabled: !!id,
   });
+
+  const isOwner = listing && userId === listing.sellerId;
 
   // ── Saved / offer / message / report / review state ────────────────────────
   const [saved, setSaved] = useState(false);
@@ -197,6 +204,27 @@ export default function ListingDetailScreen() {
     },
     onError: (err: Error) => setReviewError(err.message),
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: () => listingsApi.deleteListing(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["listings"] });
+      Alert.alert("Deleted", "Listing has been removed.");
+      router.replace("/(tabs)");
+    },
+    onError: (err: Error) => Alert.alert("Error", err.message),
+  });
+
+  function handleDelete() {
+    Alert.alert(
+      "Delete Listing",
+      "Are you sure you want to delete this listing? This action cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Delete", style: "destructive", onPress: () => deleteMutation.mutate() },
+      ]
+    );
+  }
 
   function handleSubmitOffer() {
     const cents = Math.round(parseFloat(offerAmount) * 100);
@@ -302,6 +330,23 @@ export default function ListingDetailScreen() {
             color={saved ? colors.accent : colors.textMuted}
           />
         </Pressable>
+        {isOwner && (
+          <View style={{ flexDirection: "row", gap: 12, marginLeft: 4 }}>
+            <Pressable
+              onPress={() => router.push(`/listings/edit/${id}` as never)}
+              hitSlop={8}
+            >
+              <HugeiconsIcon icon={Edit01Icon} size={22} color={colors.primary} />
+            </Pressable>
+            <Pressable
+              onPress={handleDelete}
+              disabled={deleteMutation.isPending}
+              hitSlop={8}
+            >
+              <HugeiconsIcon icon={Delete01Icon} size={22} color={colors.destructive} />
+            </Pressable>
+          </View>
+        )}
       </View>
 
       {/* Scrollable content */}

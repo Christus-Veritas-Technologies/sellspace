@@ -12,12 +12,14 @@ import {
 } from "react-native";
 
 import { colors, radii, shadows, spacing } from "@sellspace/ui/theme";
-import { authApi, tokenStorage } from "@/lib/auth";
+import { authApi } from "@/lib/auth";
+import { useAuth } from "@/contexts/auth-context";
 
 const OTP_LENGTH = 6;
 
 export default function VerifyScreen() {
   const router = useRouter();
+  const { signIn } = useAuth();
   const { email = "" } = useLocalSearchParams<{ email: string }>();
   const [digits, setDigits] = useState<string[]>(Array(OTP_LENGTH).fill(""));
   const [apiError, setApiError] = useState("");
@@ -26,7 +28,7 @@ export default function VerifyScreen() {
   const mutation = useMutation({
     mutationFn: (otp: string) => authApi.verifyOtp(email as string, otp),
     onSuccess: async (data) => {
-      await tokenStorage.setTokens(data.accessToken, data.refreshToken);
+      await signIn(data.accessToken, data.refreshToken, data.user.id);
       router.replace("/(tabs)");
     },
     onError: (err: Error) => {

@@ -81,7 +81,7 @@ export function AuthBottomSheet({
   const verifyOtpMutation = useMutation({
     mutationFn: (otp: string) => authApi.verifyOtp(email.trim(), otp),
     onSuccess: async (data) => {
-      await signIn(data.accessToken, data.refreshToken);
+      await signIn(data.accessToken, data.refreshToken, data.user.id);
       handleClose();
     },
     onError: (err: Error) => {
