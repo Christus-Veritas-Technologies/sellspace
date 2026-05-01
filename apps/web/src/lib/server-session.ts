@@ -3,8 +3,7 @@ import { cookies } from "next/headers";
 import { env } from "@sellspace/env/web";
 
 const BASE_URL = env.NEXT_PUBLIC_SERVER_URL.replace(/\/$/, "");
-const ACCESS_TOKEN_MAX_AGE_SECONDS = 15 * 60;
-const REFRESH_TOKEN_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
+const SESSION_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
 
 function buildAuthHeaders(headers: HeadersInit | undefined, accessToken: string): Headers {
   const nextHeaders = new Headers(headers);
@@ -20,7 +19,7 @@ export function setAccessTokenCookie(cookieStore: CookieStore, accessToken: stri
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
-    maxAge: ACCESS_TOKEN_MAX_AGE_SECONDS,
+    maxAge: SESSION_MAX_AGE_SECONDS,
   });
 }
 
@@ -30,7 +29,7 @@ export function setRefreshTokenCookie(cookieStore: CookieStore, refreshToken: st
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
-    maxAge: REFRESH_TOKEN_MAX_AGE_SECONDS,
+    maxAge: SESSION_MAX_AGE_SECONDS,
   });
 }
 
@@ -40,7 +39,7 @@ export function setSessionHintCookie(cookieStore: CookieStore) {
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
-    maxAge: REFRESH_TOKEN_MAX_AGE_SECONDS,
+    maxAge: SESSION_MAX_AGE_SECONDS,
   });
 }
 

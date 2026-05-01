@@ -100,7 +100,14 @@ export function CreateListingForm() {
 
         router.push(`/listings/${listing.id}`);
       } catch (err) {
-        setErrors({ form: (err as Error).message });
+        setErrors({
+          form:
+            err instanceof Error
+              ? err.message
+              : typeof err === "object" && err !== null
+                ? JSON.stringify(err)
+                : String(err),
+        });
       }
     });
   }

@@ -85,7 +85,9 @@ app.post(
 
 const uploadListingSchema = z.object({
   listingId: z.string().min(1),
-  files: z.array(z.instanceof(File)).min(1).max(10),
+  files: z
+    .union([z.instanceof(File), z.array(z.instanceof(File))])
+    .transform((val) => (Array.isArray(val) ? val : [val])),
 });
 
 app.post(
@@ -140,7 +142,7 @@ app.post(
       // Add images to listing
       const images = await Promise.all(
         urls.map((url, i) =>
-          db.image.create({
+          db.listingImage.create({
             data: {
               listingId,
               url,
