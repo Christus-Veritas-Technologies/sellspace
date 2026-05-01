@@ -3,32 +3,40 @@
 import { useCallback, useState } from "react";
 import { GoogleLogin, type CredentialResponse } from "@react-oauth/google";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { authClient } from "@/lib/auth-client";
+import { persistSession, SESSION_QUERY_KEY, type SessionUser } from "@/lib/session-client";
 
 export function GoogleSignInButton({ onSuccess: onSuccessProp }: { onSuccess?: () => void } = {}) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
   const [error, setError] = useState("");
 
   const mutation = useMutation({
     mutationFn: (idToken: string) => authClient.callbackGoogle(idToken),
     onSuccess: async (data) => {
-      // Store tokens in httpOnly cookies via the session API route
-      await fetch("/api/auth/session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      try {
+        await persistSession({
           accessToken: data.accessToken,
           refreshToken: data.refreshToken,
-        }),
-      });
-      if (onSuccessProp) {
-        onSuccessProp();
-      } else {
-        const redirect = searchParams.get("redirect") ?? "/";
-        router.replace(redirect);
+        });
+
+        queryClient.setQueryData(SESSION_QUERY_KEY, {
+          isAuthenticated: true,
+          user: data.user as SessionUser,
+        });
+        void queryClient.invalidateQueries({ queryKey: SESSION_QUERY_KEY });
+
+        if (onSuccessProp) {
+          onSuccessProp();
+        } else {
+          const redirect = searchParams.get("redirect") ?? "/";
+          router.replace(redirect);
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Unable to save session.");
       }
     },
     onError: (err: Error) => {

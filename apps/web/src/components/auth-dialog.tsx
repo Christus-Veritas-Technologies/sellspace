@@ -2,11 +2,12 @@
 
 import { useCallback, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 
 import { authClient } from "@/lib/auth-client";
 import { GoogleSignInButton } from "@/components/google-signin-button";
+import { persistSession, SESSION_QUERY_KEY, type SessionUser } from "@/lib/session-client";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -24,6 +25,7 @@ export function AuthDialog({
   onOpenChange: (v: boolean) => void;
 }) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [step, setStep] = useState<Step>("email");
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState("");
@@ -81,15 +83,22 @@ export function AuthDialog({
   const verifyOtpMutation = useMutation({
     mutationFn: (otp: string) => authClient.verifyOtp(email.trim(), otp),
     onSuccess: async (data) => {
-      await fetch("/api/auth/session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      try {
+        await persistSession({
           accessToken: data.accessToken,
           refreshToken: data.refreshToken,
-        }),
-      });
-      onAuthDone();
+        });
+
+        queryClient.setQueryData(SESSION_QUERY_KEY, {
+          isAuthenticated: true,
+          user: data.user as SessionUser,
+        });
+        void queryClient.invalidateQueries({ queryKey: SESSION_QUERY_KEY });
+
+        onAuthDone();
+      } catch (err) {
+        setOtpError(err instanceof Error ? err.message : "Unable to save session.");
+      }
     },
     onError: (err: Error) => {
       setOtpError(err.message);
