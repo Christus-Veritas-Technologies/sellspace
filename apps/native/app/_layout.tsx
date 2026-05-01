@@ -11,48 +11,20 @@ import {
 } from "@expo-google-fonts/dm-sans";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useFonts } from "expo-font";
-import { useRouter, useSegments, Stack } from "expo-router";
+import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
-import { tokenStorage } from "@/lib/auth";
+import { AuthProvider } from "@/contexts/auth-context";
 
 SplashScreen.preventAutoHideAsync();
 
 const queryClient = new QueryClient();
 
 export const unstable_settings = {
-  initialRouteName: "(auth)",
+  initialRouteName: "(tabs)",
 };
-
-function AuthGuard({ children }: { children: React.ReactNode }) {
-  const segments = useSegments();
-  const router = useRouter();
-  const [isSignedIn, setIsSignedIn] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    tokenStorage.getAccessToken().then((token) => {
-      setIsSignedIn(!!token);
-    });
-  }, []);
-
-  useEffect(() => {
-    if (isSignedIn === null) return;
-
-    const inAuthGroup = segments[0] === "(auth)";
-
-    if (!isSignedIn && !inAuthGroup) {
-      router.replace("/(auth)/login");
-    } else if (isSignedIn && inAuthGroup) {
-      router.replace("/(tabs)");
-    }
-  }, [isSignedIn, segments]);
-
-  if (isSignedIn === null) return null;
-
-  return <>{children}</>;
-}
 
 export default function Layout() {
   const [fontsLoaded, fontError] = useFonts({
@@ -78,13 +50,13 @@ export default function Layout() {
     <QueryClientProvider client={queryClient}>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <KeyboardProvider>
-          <AuthGuard>
+          <AuthProvider>
             <Stack screenOptions={{ headerShown: false }}>
               <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
               <Stack.Screen name="(auth)" options={{ headerShown: false }} />
               <Stack.Screen name="modal" options={{ title: "Modal", presentation: "modal" }} />
             </Stack>
-          </AuthGuard>
+          </AuthProvider>
         </KeyboardProvider>
       </GestureHandlerRootView>
     </QueryClientProvider>
