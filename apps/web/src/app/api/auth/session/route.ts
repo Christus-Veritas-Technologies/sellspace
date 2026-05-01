@@ -26,6 +26,14 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     maxAge: 30 * 24 * 60 * 60, // 30 days
   });
 
+  cookieStore.set("ss_has_session", "1", {
+    httpOnly: false,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+  });
+
   return NextResponse.json({ ok: true });
 }
 
@@ -33,5 +41,6 @@ export async function DELETE(): Promise<NextResponse> {
   const cookieStore = await cookies();
   cookieStore.delete("ss_access_token");
   cookieStore.delete("ss_refresh_token");
+  cookieStore.delete("ss_has_session");
   return NextResponse.json({ ok: true });
 }
