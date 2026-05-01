@@ -42,6 +42,7 @@ app.get("/uploads/*", async (c) => {
     headers: {
       "Content-Type": file.type || "application/octet-stream",
       "Cache-Control": "public, max-age=31536000, immutable",
+      "Cross-Origin-Resource-Policy": "cross-origin",
     },
   });
 });
