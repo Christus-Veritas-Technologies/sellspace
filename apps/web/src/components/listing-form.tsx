@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
-import { createListing, updateListing } from "../sell/_actions";
+import { createListing, updateListing } from "@/app/sell/_actions";
 import { ListingImagesField } from "@/components/listing-images-field";
 import { uploadListingImages } from "@/lib/uploads";
 
