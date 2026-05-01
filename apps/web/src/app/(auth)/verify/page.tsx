@@ -1,17 +1,19 @@
 "use client";
 
 import { Suspense } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useRef, useState } from "react";
 
 import { authClient } from "@/lib/auth-client";
+import { persistSession, SESSION_QUERY_KEY, type SessionUser } from "@/lib/session-client";
 
 const OTP_LENGTH = 6;
 
 function VerifyForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
   const email = searchParams.get("email") ?? "";
   const redirect = searchParams.get("redirect") ?? "/";
 
@@ -22,16 +24,22 @@ function VerifyForm() {
   const mutation = useMutation({
     mutationFn: (otp: string) => authClient.verifyOtp(email, otp),
     onSuccess: async (data) => {
-      // Store tokens in httpOnly cookies via the session API route
-      await fetch("/api/auth/session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      try {
+        await persistSession({
           accessToken: data.accessToken,
           refreshToken: data.refreshToken,
-        }),
-      });
-      router.replace(redirect);
+        });
+
+        queryClient.setQueryData(SESSION_QUERY_KEY, {
+          isAuthenticated: true,
+          user: data.user as SessionUser,
+        });
+        void queryClient.invalidateQueries({ queryKey: SESSION_QUERY_KEY });
+
+        router.replace(redirect);
+      } catch (err) {
+        setApiError(err instanceof Error ? err.message : "Unable to save session.");
+      }
     },
     onError: (err: Error) => {
       setApiError(err.message);
