@@ -74,3 +74,49 @@ export async function createListing(data: {
     imageUrls: [],
   });
 }
+
+export async function updateListing(
+  id: string,
+  data: {
+    title: string;
+    description: string;
+    price: number;
+    condition: string;
+    category: string;
+    city?: string;
+  }
+): Promise<{ id: string }> {
+  const res = await fetchWithSessionAuth(`/api/listings/${id}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!res) {
+    throw new Error("You must be signed in.");
+  }
+
+  const responseData = await readJsonSafely(res);
+  if (!res.ok) {
+    throw new Error(getErrorMessage(responseData, "Something went wrong updating the listing."));
+  }
+
+  return responseData as { id: string };
+}
+
+export async function deleteListing(id: string): Promise<void> {
+  const res = await fetchWithSessionAuth(`/api/listings/${id}`, {
+    method: "DELETE",
+  });
+
+  if (!res) {
+    throw new Error("You must be signed in.");
+  }
+
+  if (!res.ok) {
+    const data = await readJsonSafely(res);
+    throw new Error(getErrorMessage(data, "Something went wrong deleting the listing."));
+  }
+}

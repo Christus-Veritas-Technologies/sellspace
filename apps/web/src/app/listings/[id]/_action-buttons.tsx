@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { deleteListing, leaveReview, makeOffer, reportListing, startMessageThread, toggleSave, updateListing } from "./_actions";
 
@@ -607,7 +609,7 @@ export function OwnerButtons({
     imageUrls: string[];
   };
 }) {
-  const [editing, setEditing] = useState(false);
+  const router = useRouter();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, startDeleteTransition] = useTransition();
   const [error, setError] = useState("");
@@ -617,6 +619,7 @@ export function OwnerButtons({
     startDeleteTransition(async () => {
       try {
         await deleteListing(listingId);
+        router.push("/");
       } catch (err) {
         setError((err as Error).message);
         setConfirmDelete(false);
@@ -627,13 +630,13 @@ export function OwnerButtons({
   return (
     <>
       <div className="flex flex-col gap-2">
-        <button
-          onClick={() => setEditing(true)}
+        <Link
+          href={`/listings/${listingId}/edit`}
           className="w-full h-10 rounded-[10px] border border-[#0D3B2E] bg-white text-[#0D3B2E]
-                     text-[14px] font-[600] hover:bg-[#0D3B2E] hover:text-white transition-colors"
+                     text-[14px] font-[600] flex items-center justify-center hover:bg-[#0D3B2E] hover:text-white transition-colors"
         >
           Edit Listing
-        </button>
+        </Link>
         <button
           onClick={() => setConfirmDelete(true)}
           className="w-full h-10 rounded-[10px] border border-[#E2E2DC] bg-white text-[#DC2626]
@@ -643,15 +646,6 @@ export function OwnerButtons({
         </button>
         {error && <p className="text-[12px] text-[#DC2626]">{error}</p>}
       </div>
-
-      {/* Edit modal */}
-      {editing && (
-        <EditModal
-          listingId={listingId}
-          initial={initial}
-          onClose={() => setEditing(false)}
-        />
-      )}
 
       {/* Delete confirmation */}
       {confirmDelete && (
