@@ -102,6 +102,34 @@ async function authedPost<T>(path: string, body: unknown): Promise<T> {
   return data as T;
 }
 
+async function authedPatch<T>(path: string, body: unknown): Promise<T> {
+  const token = await tokenStorage.getAccessToken();
+  const res = await fetch(`${BASE_URL}${path}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error((data as { error?: string }).error ?? "Request failed");
+  return data as T;
+}
+
+async function authedDelete(path: string): Promise<void> {
+  const token = await tokenStorage.getAccessToken();
+  const res = await fetch(`${BASE_URL}${path}`, {
+    method: "DELETE",
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+  if (res.status === 204) return;
+  const data = await res.json();
+  if (!res.ok) throw new Error((data as { error?: string }).error ?? "Request failed");
+}
+
 export const listingsApi = {
   getListings(params?: ListingsQuery): Promise<ListingsFeedResponse> {
     const qs = params ? "?" + new URLSearchParams(
@@ -118,5 +146,13 @@ export const listingsApi = {
 
   createListing(input: CreateListingInput): Promise<{ id: string }> {
     return authedPost<{ id: string }>("/api/listings", input);
+  },
+
+  updateListing(id: string, input: Partial<CreateListingInput>): Promise<Listing> {
+    return authedPatch<Listing>(`/api/listings/${id}`, input);
+  },
+
+  deleteListing(id: string): Promise<void> {
+    return authedDelete(`/api/listings/${id}`);
   },
 };
