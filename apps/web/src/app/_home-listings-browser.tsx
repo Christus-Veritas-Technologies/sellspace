@@ -116,7 +116,7 @@ export function HomeListingsBrowser({ listings }: HomeListingsBrowserProps) {
             </p>
           </div>
           <a
-            href="/listings"
+            href="/search"
             className="text-[14px] font-[500] text-[#E8621A] transition-colors hover:text-[#C9521A]"
           >
             See all →
