@@ -175,6 +175,11 @@ export const messageRoutes = new Hono()
       data: { readAt: new Date() },
     });
 
+    // Notify the sender that their messages were read
+    const otherUserId =
+      userId === thread.buyerId ? thread.sellerId : thread.buyerId;
+    wsManager.send(otherUserId, { event: "read", threadId });
+
     return c.json({ thread });
   })
 
