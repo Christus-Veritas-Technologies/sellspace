@@ -1,11 +1,17 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import dynamic from "next/dynamic";
+import { useState, useTransition, useCallback } from "react";
 import { useRouter } from "next/navigation";
 
 import { createListing, updateListing } from "@/app/sell/_actions";
 import { ListingImagesField } from "@/components/listing-images-field";
 import { uploadListingImages } from "@/lib/uploads";
+
+const MapPicker = dynamic(() => import("@/components/map-picker").then((m) => m.MapPicker), {
+  ssr: false,
+  loading: () => <div className="h-[240px] rounded-[10px] bg-[#F2F2EF] border border-[#E2E2DC] animate-pulse" />,
+});
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -59,6 +65,8 @@ interface ListingFormProps {
     condition: string;
     category: string;
     city: string | null;
+    latitude?: number | null;
+    longitude?: number | null;
   };
 }
 
@@ -72,9 +80,28 @@ export function ListingForm({ initialData }: ListingFormProps) {
   const [condition, setCondition] = useState(initialData?.condition ?? "LIKE_NEW");
   const [category, setCategory] = useState(initialData?.category ?? "ELECTRONICS");
   const [city, setCity] = useState(initialData?.city ?? "");
+  const [lat, setLat] = useState<number | null>(initialData?.latitude ?? null);
+  const [lng, setLng] = useState<number | null>(initialData?.longitude ?? null);
+  const [locationError, setLocationError] = useState("");
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [pending, startTransition] = useTransition();
+
+  const handleGPS = useCallback(() => {
+    if (!navigator.geolocation) {
+      setLocationError("Geolocation not supported.");
+      return;
+    }
+    setLocationError("");
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLat(pos.coords.latitude);
+        setLng(pos.coords.longitude);
+      },
+      () => setLocationError("Could not get location. Please allow access or click on the map."),
+      { timeout: 10000 },
+    );
+  }, []);
 
   function validate() {
     const errs: Record<string, string> = {};
@@ -105,6 +132,8 @@ export function ListingForm({ initialData }: ListingFormProps) {
           condition,
           category,
           city: city.trim() || undefined,
+          latitude: lat ?? undefined,
+          longitude: lng ?? undefined,
         };
 
         let listingId = initialData?.id;
@@ -220,6 +249,51 @@ export function ListingForm({ initialData }: ListingFormProps) {
           disabled={pending}
           className={inputCls}
         />
+      </div>
+
+      {/* Location pin */}
+      <div>
+        <Label>Pin Location</Label>
+        {lat !== null && lng !== null ? (
+          <div className="space-y-2">
+            <MapPicker
+              lat={lat}
+              lng={lng}
+              onChange={(newLat, newLng) => { setLat(newLat); setLng(newLng); }}
+              height={240}
+            />
+            <div className="flex items-center justify-between">
+              <p className="text-[12px] text-[#8A8A82]">
+                {lat.toFixed(5)}, {lng.toFixed(5)} · Drag pin or click map to adjust
+              </p>
+              <button
+                type="button"
+                onClick={() => { setLat(null); setLng(null); }}
+                className="text-[12px] text-[#DC2626] hover:underline"
+              >
+                Remove pin
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center gap-3 px-4 py-3.5 rounded-[10px] border border-dashed border-[#E2E2DC] bg-[#F2F2EF]">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8A8A82" strokeWidth="2">
+              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
+              <circle cx="12" cy="9" r="2.5" />
+            </svg>
+            <p className="flex-1 text-[13px] text-[#8A8A82]">No location pinned yet</p>
+            <button
+              type="button"
+              onClick={handleGPS}
+              disabled={pending}
+              className="px-3 py-1.5 rounded-[8px] bg-[#E8621A] text-white text-[13px] font-[600]
+                         hover:bg-[#C9521A] transition-colors disabled:opacity-60"
+            >
+              Use my GPS
+            </button>
+          </div>
+        )}
+        {locationError && <p className="text-[12px] text-[#DC2626] mt-1">{locationError}</p>}
       </div>
 
       {/* Images - Hidden while editing for now to simplify, or allow adding more */}

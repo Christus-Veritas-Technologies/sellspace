@@ -608,6 +608,8 @@ export function OwnerButtons({
     condition: string;
     category: string;
     city?: string;
+    latitude?: number;
+    longitude?: number;
     imageUrls: string[];
   };
 }) {

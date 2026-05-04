@@ -10,7 +10,14 @@
     "slug": "sellspace",
     "icon": "./assets/images/icon.png",
     "plugins": [
-      "expo-font"
+      "expo-font",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow Sellspace to use your location to pin listings and share your location in chat.",
+          "locationWhenInUsePermission": "Allow Sellspace to use your location to pin listings and share your location in chat."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

@@ -63,6 +63,8 @@ export async function createListing(data: {
   condition: string;
   category: string;
   city?: string;
+  latitude?: number;
+  longitude?: number;
 }): Promise<{ id: string }> {
   return authedPost<{ id: string }>("/api/listings", {
     title: data.title,
@@ -71,6 +73,8 @@ export async function createListing(data: {
     condition: data.condition,
     category: data.category,
     city: data.city,
+    latitude: data.latitude,
+    longitude: data.longitude,
     imageUrls: [],
   });
 }
@@ -84,6 +88,8 @@ export async function updateListing(
     condition: string;
     category: string;
     city?: string;
+    latitude?: number;
+    longitude?: number;
   }
 ): Promise<{ id: string }> {
   const res = await fetchWithSessionAuth(`/api/listings/${id}`, {

@@ -50,6 +50,8 @@ export default function EditListingScreen() {
         category: listing.category,
         city: listing.city,
         imageUrls: listing.images.map(img => img.url),
+        latitude: listing.latitude,
+        longitude: listing.longitude,
       }}
       onSuccess={() => {
         router.back();

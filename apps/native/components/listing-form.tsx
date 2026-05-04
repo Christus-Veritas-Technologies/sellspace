@@ -1,8 +1,10 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
+import * as Location from "expo-location";
 import { useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   Image,
   KeyboardAvoidingView,
@@ -169,6 +171,8 @@ interface ListingFormProps {
     category: string;
     city: string | null;
     imageUrls: string[];
+    latitude?: number | null;
+    longitude?: number | null;
   };
   onSuccess: (listingId: string) => void;
   titleText?: string;
@@ -192,11 +196,32 @@ export function ListingForm({
   const [condition, setCondition] = useState(initialData?.condition || "LIKE_NEW");
   const [category, setCategory] = useState(initialData?.category || "ELECTRONICS");
   const [city, setCity] = useState(initialData?.city || "");
+  const [lat, setLat] = useState<number | null>(initialData?.latitude ?? null);
+  const [lng, setLng] = useState<number | null>(initialData?.longitude ?? null);
+  const [gettingLocation, setGettingLocation] = useState(false);
   const [images, setImages] = useState<PickedImage[]>([]);
   const [categoryPickerOpen, setCategoryPickerOpen] = useState(false);
   const [error, setError] = useState("");
 
   const categoryLabel = CATEGORIES.find((c) => c.value === category)?.label ?? category;
+
+  async function handleGetLocation() {
+    setGettingLocation(true);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        setGettingLocation(false);
+        return;
+      }
+      const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+      setLat(pos.coords.latitude);
+      setLng(pos.coords.longitude);
+    } catch {
+      // ignore
+    } finally {
+      setGettingLocation(false);
+    }
+  }
 
   async function pickImages() {
     if (images.length >= 10) {
@@ -251,6 +276,8 @@ export function ListingForm({
           condition: condition as any,
           category: category as any,
           city: city.trim() || undefined,
+          latitude: lat ?? undefined,
+          longitude: lng ?? undefined,
         });
         
         if (validImages.length > 0) {
@@ -269,6 +296,8 @@ export function ListingForm({
             condition,
             category,
             city: city.trim() || undefined,
+            latitude: lat ?? undefined,
+            longitude: lng ?? undefined,
             imageUrls: [],
         });
 
@@ -429,6 +458,67 @@ export function ListingForm({
             maxLength={100}
             style={{ ...inputStyle, marginBottom: spacing[4] }}
           />
+
+          {/* ── Location pin ─────────────────────────────────────────── */}
+          <Text style={labelStyle}>Location pin (optional)</Text>
+          {lat != null && lng != null ? (
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                backgroundColor: colors.surface,
+                borderRadius: radii.md,
+                borderWidth: 1,
+                borderColor: colors.border,
+                paddingHorizontal: 14,
+                paddingVertical: 11,
+                marginBottom: spacing[4],
+              }}
+            >
+              <Text style={{ fontFamily: "DMSans_400Regular", fontSize: 14, color: colors.text }}>
+                📍 {lat.toFixed(5)}, {lng.toFixed(5)}
+              </Text>
+              <Pressable onPress={() => { setLat(null); setLng(null); }}>
+                <Text style={{ fontFamily: "DMSans_600SemiBold", fontSize: 13, color: colors.accent }}>
+                  Remove
+                </Text>
+              </Pressable>
+            </View>
+          ) : (
+            <Pressable
+              onPress={() => void handleGetLocation()}
+              disabled={gettingLocation}
+              style={{
+                paddingVertical: 12,
+                borderRadius: radii.md,
+                borderWidth: 1.5,
+                borderColor: colors.primary,
+                borderStyle: "dashed",
+                alignItems: "center",
+                flexDirection: "row",
+                justifyContent: "center",
+                gap: 8,
+                marginBottom: spacing[4],
+                opacity: gettingLocation ? 0.6 : 1,
+              }}
+            >
+              {gettingLocation ? (
+                <ActivityIndicator size="small" color={colors.primary} />
+              ) : (
+                <Text style={{ fontSize: 18 }}>📍</Text>
+              )}
+              <Text
+                style={{
+                  fontFamily: "DMSans_600SemiBold",
+                  fontSize: 14,
+                  color: colors.primary,
+                }}
+              >
+                {gettingLocation ? "Getting location…" : "Use my current location"}
+              </Text>
+            </Pressable>
+          )}
 
           {/* ── Images ──────────────────────────────────────────────────── */}
           <Text style={labelStyle}>

@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { env } from "@sellspace/env/web";
 import { DEFAULT_LISTING_IMAGE_URL } from "@/lib/listing-images";
 import { listingsClient } from "@/lib/listings";
+import { ListingMapClient } from "@/components/listing-map-client";
 
 import { ActionButtons, OwnerButtons } from "./_action-buttons";
 
@@ -168,6 +169,23 @@ export default async function ListingDetailPage({
                 {listing.description}
               </p>
             </div>
+
+            {/* Location map */}
+            {listing.latitude != null && listing.longitude != null && (
+              <div className="mt-8">
+                <h2
+                  className="text-[20px] font-[600] text-[#1A1A18] mb-3"
+                  style={{ fontFamily: "'Fraunces', Georgia, serif" }}
+                >
+                  Location
+                </h2>
+                <ListingMapClient
+                  lat={listing.latitude}
+                  lng={listing.longitude}
+                  label={listing.title}
+                />
+              </div>
+            )}
           </div>
 
           {/* ── Right: detail card ──────────────────────────────────── */}
@@ -234,6 +252,8 @@ export default async function ListingDetailPage({
                       condition: listing.condition,
                       category: listing.category,
                       city: listing.seller.city ?? listing.city ?? undefined,
+                      latitude: listing.latitude ?? undefined,
+                      longitude: listing.longitude ?? undefined,
                       imageUrls: listing.images.map((img: { url: string }) => img.url),
                     }}
                   />

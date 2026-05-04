@@ -49,6 +49,8 @@ const createListingBody = z.object({
   condition: ConditionEnum,
   category: CategoryEnum,
   city: z.string().max(100).optional(),
+  latitude: z.number().min(-90).max(90).optional(),
+  longitude: z.number().min(-180).max(180).optional(),
   imageUrls: z.array(z.string().url()).max(10),
 });
 

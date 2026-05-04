@@ -17,6 +17,7 @@ import {
   Alert,
   Image,
   KeyboardAvoidingView,
+  Linking,
   Modal,
   Platform,
   Pressable,
@@ -518,6 +519,26 @@ export default function ListingDetailScreen() {
           <DetailRow label="Condition" value={cond.label} />
           <DetailRow label="Category" value={CATEGORY_LABELS[listing.category]} />
           <DetailRow label="Location" value={listing.seller.city ?? listing.city ?? "Zimbabwe"} />
+          {listing.latitude != null && listing.longitude != null && (
+            <Pressable
+              onPress={() => void Linking.openURL(`https://maps.google.com/?q=${listing.latitude},${listing.longitude}`)}
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+                paddingVertical: 10,
+                borderTopWidth: 1,
+                borderTopColor: colors.border,
+              }}
+            >
+              <Text style={{ fontFamily: "DMSans_700Bold", fontSize: 12, color: colors.textMuted, textTransform: "uppercase", letterSpacing: 0.4 }}>
+                Map
+              </Text>
+              <Text style={{ fontFamily: "DMSans_500Medium", fontSize: 13, color: colors.primary }}>
+                📍 View on Google Maps →
+              </Text>
+            </Pressable>
+          )}
           <DetailRow label="Views" value={String(listing.views ?? 0)} />
           <View
             style={{

@@ -70,6 +70,8 @@ export default async function EditListingPage({
                 condition: listing.condition,
                 category: listing.category,
                 city: listing.city,
+                latitude: listing.latitude,
+                longitude: listing.longitude,
             }} 
           />
         </div>

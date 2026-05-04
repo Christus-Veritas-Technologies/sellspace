@@ -46,6 +46,8 @@ export interface Listing {
   updatedAt: string;
   images: ListingImage[];
   seller: ListingSeller;
+  latitude: number | null;
+  longitude: number | null;
 }
 
 export interface ListingsFeedResponse {

@@ -45,6 +45,8 @@ export interface Listing {
   createdAt: string;
   images: ListingImage[];
   seller: ListingSeller;
+  latitude: number | null;
+  longitude: number | null;
 }
 
 export interface ListingsFeedResponse {
@@ -74,6 +76,8 @@ export interface CreateListingInput {
   category: string;
   city?: string;
   imageUrls: string[];
+  latitude?: number;
+  longitude?: number;
 }
 
 // ─── API client ───────────────────────────────────────────────────────────────
