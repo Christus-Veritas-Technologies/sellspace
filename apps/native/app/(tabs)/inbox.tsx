@@ -4,7 +4,7 @@ import {
   Money02Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
@@ -23,6 +23,7 @@ import type { MessageThread } from "@/lib/messages";
 import { messagesApi } from "@/lib/messages";
 import type { OfferThread } from "@/lib/offers";
 import { offersApi } from "@/lib/offers";
+import { useServerEvents } from "@/lib/notifications";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -222,7 +223,15 @@ type Tab = "messages" | "offers";
 
 export default function InboxScreen() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<Tab>("messages");
+
+  // Real-time: refresh inbox when a new message arrives via WebSocket
+  useServerEvents((e) => {
+    if (e.event === "message") {
+      void queryClient.invalidateQueries({ queryKey: ["inbox-messages"] });
+    }
+  });
 
   const {
     data: msgData,
