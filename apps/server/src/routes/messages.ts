@@ -16,7 +16,12 @@ const startThreadBody = z.object({
 });
 
 const sendMessageBody = z.object({
-  body: z.string().min(1).max(2000),
+  body: z.string().max(2000).optional(),
+  imageUrl: z.string().url().max(2000).optional(),
+  latitude: z.number().min(-90).max(90).optional(),
+  longitude: z.number().min(-180).max(180).optional(),
+}).refine((d) => d.body?.trim() || d.imageUrl || d.latitude != null, {
+  message: "Provide either a message body, image, or location.",
 });
 
 // ─── Select shapes ────────────────────────────────────────────────────────────
@@ -42,8 +47,11 @@ const userPreview = {
 const messageShape = {
   id: true,
   body: true,
+  imageUrl: true,
   createdAt: true,
   readAt: true,
+  latitude: true,
+  longitude: true,
   sender: { select: userPreview },
 } as const;
 
@@ -187,7 +195,7 @@ export const messageRoutes = new Hono()
   .post("/threads/:id", requireAuth, zValidator("json", sendMessageBody), async (c) => {
     const userId = c.get("userId") as string;
     const threadId = c.req.param("id");
-    const { body: msgBody } = c.req.valid("json");
+    const { body: msgBody, imageUrl, latitude, longitude } = c.req.valid("json");
 
     const thread = await db.messageThread.findUnique({
       where: { id: threadId },
@@ -198,9 +206,20 @@ export const messageRoutes = new Hono()
     if (thread.buyerId !== userId && thread.sellerId !== userId)
       return c.json({ error: "Forbidden" }, 403);
 
+    const resolvedBody =
+      imageUrl ? "📷 Photo" :
+      latitude != null ? "📍 Location" :
+      (msgBody ?? "");
+
     const message = await db.message.create({
-      data: { threadId, senderId: userId, body: msgBody },
-      include: { sender: { select: userPreview } },
+      data: {
+        threadId,
+        senderId: userId,
+        body: resolvedBody,
+        ...(imageUrl && { imageUrl }),
+        ...(latitude != null && { latitude, longitude }),
+      },
+      select: { ...messageShape, sender: { select: userPreview } },
     });
 
     const recipientId = userId === thread.buyerId ? thread.sellerId : thread.buyerId;
@@ -212,7 +231,10 @@ export const messageRoutes = new Hono()
     if (!wsManager.isOnline(recipientId)) {
       await notify(recipientId, "NEW_MESSAGE", {
         threadId,
-        preview: msgBody.slice(0, 80),
+        preview:
+          imageUrl ? "📷 Sent a photo" :
+          latitude != null ? "📍 Shared a location" :
+          resolvedBody.slice(0, 80),
       });
     }
 
