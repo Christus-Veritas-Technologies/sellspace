@@ -207,17 +207,19 @@ export function ListingForm({
 
   async function handleGetLocation() {
     setGettingLocation(true);
+    setError("");
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
+        setError("Location permission denied. Please enable it in settings to use GPS location.");
         setGettingLocation(false);
         return;
       }
       const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
       setLat(pos.coords.latitude);
       setLng(pos.coords.longitude);
-    } catch {
-      // ignore
+    } catch (err) {
+      setError(`Failed to get location: ${err instanceof Error ? err.message : "Unknown error"}`);
     } finally {
       setGettingLocation(false);
     }

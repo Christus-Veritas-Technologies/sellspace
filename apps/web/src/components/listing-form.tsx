@@ -89,7 +89,7 @@ export function ListingForm({ initialData }: ListingFormProps) {
 
   const handleGPS = useCallback(() => {
     if (!navigator.geolocation) {
-      setLocationError("Geolocation not supported.");
+      setLocationError("Geolocation not supported in your browser.");
       return;
     }
     setLocationError("");
@@ -97,9 +97,20 @@ export function ListingForm({ initialData }: ListingFormProps) {
       (pos) => {
         setLat(pos.coords.latitude);
         setLng(pos.coords.longitude);
+        setLocationError("");
       },
-      () => setLocationError("Could not get location. Please allow access or click on the map."),
-      { timeout: 10000 },
+      (err) => {
+        if (err.code === 1) {
+          setLocationError("Permission denied. Please enable location access to use GPS.");
+        } else if (err.code === 2) {
+          setLocationError("Position unavailable. Please try again or use the map to pick a location.");
+        } else if (err.code === 3) {
+          setLocationError("Request timed out. Please try again or use the map.");
+        } else {
+          setLocationError("Could not get location. Please allow access or click on the map.");
+        }
+      },
+      { timeout: 10000, enableHighAccuracy: true },
     );
   }, []);
 
