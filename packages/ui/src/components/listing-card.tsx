@@ -24,6 +24,7 @@ export interface ListingCardProps {
   originalPrice?: number;
   saved?: boolean;
   onSave?: () => void;
+  saving?: boolean;
   currency?: string;
   href?: string;
 }
@@ -55,6 +56,7 @@ export function ListingCard({
   originalPrice,
   saved = false,
   onSave,
+  saving = false,
   href,
 }: ListingCardProps) {
   const cond = conditionConfig[condition];
@@ -90,16 +92,28 @@ export function ListingCard({
             e.stopPropagation();
             onSave?.();
           }}
+          disabled={saving}
           aria-label={saved ? "Remove from saved" : "Save listing"}
-          className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/80
-                     backdrop-blur-sm flex items-center justify-center
-                     hover:bg-white transition-colors z-10"
+          className={cn(
+            "absolute top-2 right-2 w-8 h-8 rounded-full flex items-center justify-center z-10 transition-all duration-200",
+            saved
+              ? "bg-[#E8621A] hover:bg-[#C9521A]"
+              : "bg-white/80 backdrop-blur-sm hover:bg-white",
+            saving && "opacity-60"
+          )}
         >
-          <Bookmark03Icon
-            size={16}
-            color={saved ? "#E8621A" : "#8A8A82"}
-            fill={saved ? "#E8621A" : "none"}
-          />
+          {saving ? (
+            <svg className="w-4 h-4 animate-spin text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+            </svg>
+          ) : (
+            <Bookmark03Icon
+              size={16}
+              color={saved ? "white" : "#8A8A82"}
+              fill={saved ? "white" : "none"}
+            />
+          )}
         </button>
       </div>
 
