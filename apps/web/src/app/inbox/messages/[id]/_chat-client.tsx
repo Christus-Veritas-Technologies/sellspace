@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect, useCallback, useTransition } from "react";
+import { motion } from "framer-motion";
 
 import { sendMessage } from "./_actions";
 
@@ -282,14 +283,20 @@ export function ChatClient({
         {messages.map((msg) => {
           const isMe = msg.sender.id === currentUserId;
           return (
-            <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
+            <motion.div
+              key={msg.id}
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+              className={`flex ${isMe ? "justify-end" : "justify-start"}`}
+            >
               <div
                 className={`max-w-[70%] flex flex-col gap-0.5 ${
                   isMe ? "items-end" : "items-start"
                 }`}
               >
                 <div
-                  className={`px-4 py-2.5 rounded-[14px] text-[14px] leading-relaxed ${
+                  className={`px-4 py-2.5 rounded-[14px] text-[14px] leading-relaxed break-words whitespace-pre-wrap ${
                     isMe
                       ? "bg-[#E8621A] text-white rounded-tr-[4px]"
                       : "bg-white border border-[#E2E2DC] text-[#1A1A18] rounded-tl-[4px]"
@@ -306,7 +313,7 @@ export function ChatClient({
                   <p className="text-[10px] text-[#8A8A82]">{formatTime(msg.createdAt)}</p>
                 </div>
               </div>
-            </div>
+            </motion.div>
           );
         })}
         <div ref={bottomRef} />
