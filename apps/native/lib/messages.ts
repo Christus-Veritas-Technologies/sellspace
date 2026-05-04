@@ -13,8 +13,11 @@ export interface MessageSender {
 export interface ChatMessage {
   id: string;
   body: string;
+  imageUrl: string | null;
   createdAt: string;
   readAt: string | null;
+  latitude: number | null;
+  longitude: number | null;
   sender: MessageSender;
 }
 
@@ -77,5 +80,17 @@ export const messagesApi = {
     authedFetch<{ message: ChatMessage }>(`/api/messages/threads/${threadId}`, {
       method: "POST",
       body: JSON.stringify({ body }),
+    }),
+
+  sendLocation: (threadId: string, lat: number, lng: number) =>
+    authedFetch<{ message: ChatMessage }>(`/api/messages/threads/${threadId}`, {
+      method: "POST",
+      body: JSON.stringify({ latitude: lat, longitude: lng }),
+    }),
+
+  sendImageMessage: (threadId: string, imageUrl: string) =>
+    authedFetch<{ message: ChatMessage }>(`/api/messages/threads/${threadId}`, {
+      method: "POST",
+      body: JSON.stringify({ imageUrl }),
     }),
 };
