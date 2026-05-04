@@ -23,17 +23,15 @@ export default async function SavedPage() {
   const saved = res.ok
     ? ((await res.json()) as {
         saved: {
-          listingId: string;
-          listing: {
-            id: string;
-            title: string;
-            price: number;
-            condition: string;
-            category: string;
-            city: string | null;
-            seller: { displayName: string | null; city: string | null };
-            images: { url: string }[];
-          };
+          id: string;
+          title: string;
+          price: number;
+          condition: string;
+          category: string;
+          city: string | null;
+          seller: { displayName: string | null; city: string | null };
+          images: { url: string }[];
+          savedAt: string;
         }[];
       }).saved
     : [];
@@ -63,18 +61,18 @@ export default async function SavedPage() {
           </div>
         ) : (
           <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-4">
-            {saved.map(({ listing }) => (
+            {saved.map((item) => (
               <ListingCard
-                key={listing.id}
-                id={listing.id}
-                image={getPrimaryListingImage(listing.images)}
-                condition={listing.condition as never}
-                category={listing.category as never}
-                title={listing.title}
-                sellerName={listing.seller.displayName ?? "Seller"}
-                city={listing.seller.city ?? listing.city ?? "Zimbabwe"}
-                price={listing.price}
-                href={`/listings/${listing.id}`}
+                key={item.id}
+                id={item.id}
+                image={getPrimaryListingImage(item.images)}
+                condition={item.condition as never}
+                category={item.category as never}
+                title={item.title}
+                sellerName={item.seller.displayName ?? "Seller"}
+                city={item.seller.city ?? item.city ?? "Zimbabwe"}
+                price={item.price}
+                href={`/listings/${item.id}`}
               />
             ))}
           </div>
