@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
       bodySizeLimit: "15mb",
     },
   },
+  allowedDevOrigins: ['192.168.100.61'],
   headers: async () => {
     return [
       {
