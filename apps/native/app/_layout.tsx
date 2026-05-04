@@ -18,6 +18,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { AuthProvider } from "@/contexts/auth-context";
 import { AuthDialogProvider } from "@/contexts/auth-dialog-context";
+import { PushNotificationsProvider } from "@/contexts/push-notifications-context";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -52,13 +53,15 @@ export default function Layout() {
       <GestureHandlerRootView style={{ flex: 1 }}>
         <KeyboardProvider>
           <AuthProvider>
-            <AuthDialogProvider>
-              <Stack screenOptions={{ headerShown: false }}>
-                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-                <Stack.Screen name="modal" options={{ title: "Modal", presentation: "modal" }} />
-              </Stack>
-            </AuthDialogProvider>
+            <PushNotificationsProvider>
+              <AuthDialogProvider>
+                <Stack screenOptions={{ headerShown: false }}>
+                  <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                  <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+                  <Stack.Screen name="modal" options={{ title: "Modal", presentation: "modal" }} />
+                </Stack>
+              </AuthDialogProvider>
+            </PushNotificationsProvider>
           </AuthProvider>
         </KeyboardProvider>
       </GestureHandlerRootView>

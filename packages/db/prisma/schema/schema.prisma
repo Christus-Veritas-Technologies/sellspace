@@ -61,9 +61,13 @@ model User {
   displayName String
   avatarUrl   String?
   city        String?
-  isPrivate   Boolean  @default(false)
-  googleId    String?  @unique // Google OAuth identifier
-  createdAt   DateTime @default(now())
+  isPrivate           Boolean  @default(false)
+  googleId            String?  @unique // Google OAuth identifier
+  createdAt           DateTime @default(now())
+
+  // Push notification tokens
+  webPushSubscription String? // JSON-serialised browser PushSubscription
+  expoPushToken       String? // Expo push token for native devices
 
   listings        Listing[]
   savedListings   SavedListing[]

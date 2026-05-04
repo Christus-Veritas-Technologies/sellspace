@@ -8,6 +8,7 @@ import { Toaster } from "@sellspace/ui/components/sonner";
 import { env } from "@sellspace/env/web";
 import { AuthDialogProvider } from "@/contexts/auth-dialog-context";
 import { useNotifications } from "@/lib/use-notifications";
+import { PushSubscription } from "./push-subscription";
 import { ThemeProvider } from "./theme-provider";
 
 function NotificationManager() {
@@ -24,6 +25,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         <ThemeProvider attribute="class" defaultTheme="light" disableTransitionOnChange>
           <AuthDialogProvider>
             <NotificationManager />
+            <PushSubscription />
             {children}
           </AuthDialogProvider>
           <Toaster richColors />
