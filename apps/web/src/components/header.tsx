@@ -38,8 +38,7 @@ export default function SiteHeader() {
   const { isAuthenticated } = useSession();
   const { openAuthDialog } = useAuthDialog();
 
-  const navBtnClass =
-    "w-10 h-10 flex items-center justify-center rounded-full text-white hover:bg-white/10 transition-colors";
+  const navBtnClass = "w-10 h-10 flex items-center justify-center rounded-full text-white hover:bg-white/10 transition-colors";
 
   function handleProtectedLinkClick(event: MouseEvent<HTMLAnchorElement>) {
     if (isAuthenticated) {
@@ -114,10 +113,7 @@ export default function SiteHeader() {
 
       {/* ── Sub nav — desktop only ───────────────── */}
       <div className="hidden md:flex h-11 bg-white border-b border-[#E2E2DC] px-10 items-center gap-1">
-        <button
-          className="flex items-center gap-1 px-3 h-8 rounded-md text-[14px] font-[500]
-                     text-[#1A1A18] hover:bg-[#EFEFEB] transition-colors shrink-0"
-        >
+        <button className="flex items-center gap-1 px-3 h-8 rounded-md text-[14px] font-[500] text-[#1A1A18] hover:bg-[#EFEFEB] transition-colors shrink-0">
           Browse
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="m6 9 6 6 6-6" />
@@ -125,12 +121,7 @@ export default function SiteHeader() {
         </button>
         <div className="w-px h-5 bg-[#E2E2DC] mx-1" />
         {SUB_NAV_CATEGORIES.map((cat) => (
-          <Link
-            key={cat}
-            href={`/search?category=${encodeURIComponent(cat.toUpperCase().replace(/ & /g, "_").replace(/ /g, "_"))}`}
-            className="px-3 h-8 flex items-center text-[13px] font-[400] text-[#4A4A45]
-                       hover:bg-[#EFEFEB] rounded-md transition-colors whitespace-nowrap"
-          >
+          <Link key={cat} href={`/search?category=${encodeURIComponent(cat.toUpperCase().replace(/ & /g, "_").replace(/ /g, "_"))}`} className="px-3 h-8 flex items-center text-[13px] font-[400] text-[#4A4A45] hover:bg-[#EFEFEB] rounded-md transition-colors whitespace-nowrap">
             {cat}
           </Link>
         ))}
