@@ -170,7 +170,7 @@ export const offerRoutes = new Hono()
         listing: { select: listingPreview },
         buyer: { select: userPreview },
         seller: { select: userPreview },
-        messages: { orderBy: { createdAt: "asc" as const } },
+        messages: { orderBy: { createdAt: "asc" as const }, include: { sender: { select: userPreview } } },
       },
     });
 
@@ -243,7 +243,7 @@ export const offerRoutes = new Hono()
         listing: { select: listingPreview },
         buyer: { select: userPreview },
         seller: { select: userPreview },
-        messages: { orderBy: { createdAt: "asc" as const } },
+        messages: { orderBy: { createdAt: "asc" as const }, include: { sender: { select: userPreview } } },
       },
     });
 

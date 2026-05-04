@@ -4,6 +4,8 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
+import { useAuthDialog } from "@/contexts/auth-dialog-context";
+import { useSession } from "@/lib/use-session";
 import { deleteListing, leaveReview, makeOffer, reportListing, startMessageThread, toggleSave, updateListing } from "./_actions";
 
 // ─── Offer modal ──────────────────────────────────────────────────────────────
@@ -686,16 +688,28 @@ export function ActionButtons({
   const [modal, setModal] = useState<"offer" | "message" | "report" | "review" | null>(null);
   const [saved, setSaved] = useState(savedInitial);
   const [savePending, startSaveTransition] = useTransition();
+  const { isAuthenticated } = useSession();
+  const { openAuthDialog } = useAuthDialog();
+
+  function requireAuth(action: () => void) {
+    if (!isAuthenticated) {
+      openAuthDialog();
+      return;
+    }
+    action();
+  }
 
   function handleSaveToggle() {
-    const next = !saved;
-    setSaved(next);
-    startSaveTransition(async () => {
-      try {
-        await toggleSave(listingId, next);
-      } catch {
-        setSaved(!next);
-      }
+    requireAuth(() => {
+      const next = !saved;
+      setSaved(next);
+      startSaveTransition(async () => {
+        try {
+          await toggleSave(listingId, next);
+        } catch {
+          setSaved(!next);
+        }
+      });
     });
   }
 
@@ -703,14 +717,14 @@ export function ActionButtons({
     <>
       <div className="flex flex-col gap-3">
         <button
-          onClick={() => setModal("offer")}
+          onClick={() => requireAuth(() => setModal("offer"))}
           className="w-full h-11 rounded-[10px] bg-[#E8621A] text-white text-[15px]
                      font-[600] hover:bg-[#C9521A] transition-colors"
         >
           Make an Offer
         </button>
         <button
-          onClick={() => setModal("message")}
+          onClick={() => requireAuth(() => setModal("message"))}
           className="w-full h-11 rounded-[10px] border border-[#E2E2DC] bg-white
                      text-[#1A1A18] text-[15px] font-[600] hover:bg-[#F2F2EF]
                      transition-colors"
@@ -730,7 +744,7 @@ export function ActionButtons({
             {saved ? "✦ Saved" : "Save"}
           </button>
           <button
-            onClick={() => setModal("review")}
+            onClick={() => requireAuth(() => setModal("review"))}
             className="flex-1 h-10 rounded-[10px] border border-[#E2E2DC] bg-white
                        text-[14px] font-[600] text-[#4A4A45] hover:bg-[#F2F2EF] transition-colors"
           >
@@ -740,7 +754,7 @@ export function ActionButtons({
       </div>
 
       <button
-        onClick={() => setModal("report")}
+        onClick={() => requireAuth(() => setModal("report"))}
         className="mt-3 w-full text-center text-[12px] text-[#8A8A82] hover:text-[#DC2626] transition-colors"
       >
         Report this listing
