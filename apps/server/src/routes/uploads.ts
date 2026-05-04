@@ -210,4 +210,49 @@ app.delete(
   },
 );
 
+// ─── Upload chat / message image ─────────────────────────────────────────────
+
+const uploadMessageImageSchema = z.object({
+  file: z.instanceof(File),
+});
+
+app.post(
+  "/message",
+  requireAuth,
+  zValidator("form", uploadMessageImageSchema),
+  async (c) => {
+    const userId = c.get("userId");
+    if (!userId) return c.json({ error: "Unauthorized" }, 401);
+
+    const { file } = c.req.valid("form");
+
+    const buffer = await file.arrayBuffer();
+
+    // Max 10 MB for chat images
+    if (!validateFileSize(Buffer.from(buffer), 10485760)) {
+      return c.json({ error: "File too large (max 10MB)" }, 400);
+    }
+
+    const allowedMimes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+    if (!validateMimeType(file.type, allowedMimes)) {
+      return c.json({ error: "Invalid file type. Must be JPEG, PNG, WebP, or GIF" }, 400);
+    }
+
+    const publicOrigin = new URL(c.req.url).origin;
+
+    try {
+      const key = generateR2Key(`messages/${userId}`, file.name);
+      const imageUrl = await uploadToR2(
+        { key, contentType: file.type, buffer: Buffer.from(buffer) },
+        publicOrigin,
+      );
+
+      return c.json({ imageUrl });
+    } catch (err) {
+      console.error("Message image upload error:", err);
+      return c.json({ error: "Upload failed" }, 500);
+    }
+  },
+);
+
 export const uploadRoutes = app;
