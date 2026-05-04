@@ -16,7 +16,7 @@ export async function requireAuth(c: Context, next: Next): Promise<Response | vo
   const token = authorization.slice(7);
 
   try {
-    const payload = await verifyAccessToken(token);
+    const payload = await verifyAccessToken(token); 
     c.set("userId", payload.sub);
     await next();
   } catch {
