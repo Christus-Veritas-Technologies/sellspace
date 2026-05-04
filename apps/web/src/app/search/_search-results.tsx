@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useInfiniteQuery } from "@tanstack/react-query";
 
 import { ListingCard } from "@sellspace/ui/components/listing-card";
@@ -43,6 +43,11 @@ export function SearchResults() {
   const maxDollars = params.get("maxPrice") ?? undefined;
   const minPrice = minDollars ? Math.round(parseFloat(minDollars) * 100) : undefined;
   const maxPrice = maxDollars ? Math.round(parseFloat(maxDollars) * 100) : undefined;
+
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [mobileQ, setMobileQ] = useState(q ?? "");
+  useEffect(() => { setMobileQ(q ?? ""); }, [q]);
 
   const { data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage } = useInfiniteQuery({
     queryKey: ["search", { q, category, condition, sort, city, minPrice, maxPrice }],
@@ -90,7 +95,36 @@ export function SearchResults() {
               ? `${total} listing${total === 1 ? "" : "s"} found`
               : "No listings found"}
         </p>
-      </div>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            const next = new URLSearchParams(params.toString());
+            if (mobileQ.trim()) next.set("q", mobileQ.trim()); else next.delete("q");
+            next.delete("page");
+            startTransition(() => { router.push(`/search?${next.toString()}`); });
+          }}
+          className="mt-3 lg:hidden"
+        >
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={mobileQ}
+              onChange={(e) => setMobileQ(e.target.value)}
+              placeholder="Search listings\u2026"
+              className="h-9 flex-1 rounded-[8px] border border-[#E2E2DC] bg-[#F2F2EF] px-3 text-[13px] text-[#1A1A18] focus:outline-none focus:border-[#E8621A]"
+            />
+            <button
+              type="submit"
+              disabled={isPending}
+              className="h-9 px-4 rounded-[8px] bg-[#0D3B2E] text-[#FAFAF8] text-[13px] font-[600] disabled:opacity-60 flex items-center gap-1.5"
+            >
+              {isPending && (
+                <span className="h-3.5 w-3.5 rounded-full border-2 border-[#FAFAF8] border-t-transparent animate-spin" />
+              )}
+              {isPending ? "Searching\u2026" : "Search"}
+            </button>
+          </div>
+        </form>      </div>
 
       {/* Grid */}
       {isLoading ? (

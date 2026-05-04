@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -28,40 +28,68 @@ export function FilterSidebar() {
   const router = useRouter();
   const params = useSearchParams();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [, startTransition] = useTransition();
+  const [isPending, startTransition] = useTransition();
 
-  const condition = params.get("condition") ?? "";
-  const sort = params.get("sort") ?? "newest";
-  const minPrice = params.get("minPrice") ?? "";
-  const maxPrice = params.get("maxPrice") ?? "";
-  const city = params.get("city") ?? "";
+  const conditionParam = params.get("condition") ?? "";
+  const sortParam = params.get("sort") ?? "newest";
+  const minPriceParam = params.get("minPrice") ?? "";
+  const maxPriceParam = params.get("maxPrice") ?? "";
+  const cityParam = params.get("city") ?? "";
 
-  function update(key: string, value: string) {
-    const next = new URLSearchParams(params.toString());
-    if (value) {
-      next.set(key, value);
-    } else {
-      next.delete(key);
+  const [draftSort, setDraftSort] = useState(sortParam);
+  const [draftCity, setDraftCity] = useState(cityParam);
+  const [draftCondition, setDraftCondition] = useState(conditionParam);
+  const [draftMinPrice, setDraftMinPrice] = useState(minPriceParam);
+  const [draftMaxPrice, setDraftMaxPrice] = useState(maxPriceParam);
+
+  // Re-sync drafts when URL changes (e.g. back/forward navigation)
+  useEffect(() => {
+    setDraftSort(sortParam);
+    setDraftCity(cityParam);
+    setDraftCondition(conditionParam);
+    setDraftMinPrice(minPriceParam);
+    setDraftMaxPrice(maxPriceParam);
+  }, [sortParam, cityParam, conditionParam, minPriceParam, maxPriceParam]);
+
+  // Close mobile drawer after navigation settles
+  const [closeMobileOnNav, setCloseMobileOnNav] = useState(false);
+  useEffect(() => {
+    if (!isPending && closeMobileOnNav) {
+      setMobileOpen(false);
+      setCloseMobileOnNav(false);
     }
+  }, [isPending, closeMobileOnNav]);
+
+  function applySearch(closeMobile: boolean) {
+    const next = new URLSearchParams(params.toString());
+    if (draftSort && draftSort !== "newest") next.set("sort", draftSort); else next.delete("sort");
+    if (draftCondition) next.set("condition", draftCondition); else next.delete("condition");
+    if (draftCity.trim()) next.set("city", draftCity.trim()); else next.delete("city");
+    if (draftMinPrice.trim()) next.set("minPrice", draftMinPrice.trim()); else next.delete("minPrice");
+    if (draftMaxPrice.trim()) next.set("maxPrice", draftMaxPrice.trim()); else next.delete("maxPrice");
     next.delete("page");
-    startTransition(() => {
-      router.push(`/search?${next.toString()}`);
-    });
+    if (closeMobile) setCloseMobileOnNav(true);
+    startTransition(() => { router.push(`/search?${next.toString()}`); });
   }
 
-  function clearAll() {
+  function clearAll(closeMobile: boolean) {
+    setDraftSort("newest");
+    setDraftCity("");
+    setDraftCondition("");
+    setDraftMinPrice("");
+    setDraftMaxPrice("");
     const next = new URLSearchParams();
     const q = params.get("q");
     if (q) next.set("q", q);
-    startTransition(() => {
-      router.push(`/search?${next.toString()}`);
-    });
+    next.delete("page");
+    if (closeMobile) setCloseMobileOnNav(true);
+    startTransition(() => { router.push(`/search?${next.toString()}`); });
   }
 
-  const hasActiveFilters = !!(condition || minPrice || maxPrice || city || (sort && sort !== "newest"));
-  const activeFilterCount = [condition, minPrice, maxPrice, city].filter(Boolean).length + (sort !== "newest" ? 1 : 0);
+  const hasActiveFilters = !!(conditionParam || minPriceParam || maxPriceParam || cityParam || sortParam !== "newest");
+  const activeFilterCount = [conditionParam, minPriceParam, maxPriceParam, cityParam].filter(Boolean).length + (sortParam !== "newest" ? 1 : 0);
 
-  const filterContent = (
+  function filterContent(mobile: boolean) { return (
     <>
       {/* Branding */}
       <Link href="/" className="mb-4 hidden items-center justify-center group lg:flex">
@@ -82,7 +110,7 @@ export function FilterSidebar() {
         </h2>
         {hasActiveFilters && (
           <button
-            onClick={clearAll}
+            onClick={() => clearAll(mobile)}
             className="text-[12px] text-[#E8621A] hover:underline font-[500]"
           >
             Clear all
@@ -97,8 +125,8 @@ export function FilterSidebar() {
             Sort by
           </label>
           <select
-            value={sort}
-            onChange={(e) => update("sort", e.target.value)}
+            value={draftSort}
+            onChange={(e) => setDraftSort(e.target.value)}
             className="h-9 w-full rounded-[8px] border border-[#E2E2DC] bg-[#F2F2EF] px-2 text-[13px] text-[#1A1A18] focus:outline-none focus:border-[#E8621A]"
           >
             {SORT_OPTIONS.map((o) => (
@@ -114,8 +142,8 @@ export function FilterSidebar() {
           </label>
           <input
             type="text"
-            value={city}
-            onChange={(e) => update("city", e.target.value)}
+            value={draftCity}
+            onChange={(e) => setDraftCity(e.target.value)}
             placeholder="e.g. Harare"
             className="h-9 w-full rounded-[8px] border border-[#E2E2DC] bg-[#F2F2EF] px-3 text-[13px] text-[#1A1A18] focus:outline-none focus:border-[#E8621A]"
           />
@@ -130,9 +158,9 @@ export function FilterSidebar() {
             {CONDITION_OPTIONS.map((o) => (
               <button
                 key={o.value}
-                onClick={() => update("condition", condition === o.value ? "" : o.value)}
+                onClick={() => setDraftCondition(draftCondition === o.value ? "" : o.value)}
                 className={`rounded-[8px] border px-3 py-2 text-left text-[13px] font-[500] leading-[1.25] transition-colors
-                  ${condition === o.value
+                  ${draftCondition === o.value
                     ? "border-[#0D3B2E] bg-[#0D3B2E] text-[#FAFAF8]"
                     : "border-[#E2E2DC] bg-white text-[#4A4A45] hover:bg-[#F2F2EF]"
                   }`}
@@ -153,8 +181,8 @@ export function FilterSidebar() {
               type="number"
               min="0"
               step="0.01"
-              value={minPrice}
-              onChange={(e) => update("minPrice", e.target.value)}
+              value={draftMinPrice}
+              onChange={(e) => setDraftMinPrice(e.target.value)}
               placeholder="Min"
               className="h-9 w-full rounded-[8px] border border-[#E2E2DC] bg-[#F2F2EF] px-3 text-[13px] text-[#1A1A18] focus:outline-none focus:border-[#E8621A]"
             />
@@ -162,16 +190,28 @@ export function FilterSidebar() {
               type="number"
               min="0"
               step="0.01"
-              value={maxPrice}
-              onChange={(e) => update("maxPrice", e.target.value)}
+              value={draftMaxPrice}
+              onChange={(e) => setDraftMaxPrice(e.target.value)}
               placeholder="Max"
               className="h-9 w-full rounded-[8px] border border-[#E2E2DC] bg-[#F2F2EF] px-3 text-[13px] text-[#1A1A18] focus:outline-none focus:border-[#E8621A]"
             />
           </div>
         </div>
       </div>
+
+      <button
+        type="button"
+        onClick={() => applySearch(mobile)}
+        disabled={isPending}
+        className="mt-5 w-full h-10 rounded-[10px] bg-[#0D3B2E] text-[#FAFAF8] text-[14px] font-[600] hover:bg-[#0A2E24] disabled:opacity-60 transition-colors flex items-center justify-center gap-2"
+      >
+        {isPending && (
+          <span className="h-4 w-4 rounded-full border-2 border-[#FAFAF8] border-t-transparent animate-spin" />
+        )}
+        {isPending ? "Searching\u2026" : "Search"}
+      </button>
     </>
-  );
+  ); }
 
   return (
     <>
@@ -230,7 +270,7 @@ export function FilterSidebar() {
             </div>
             <div className="flex-1 overflow-y-auto p-4">
               <div className="rounded-[14px] border border-[#E2E2DC] bg-white p-4 shadow-[0_1px_3px_rgba(26,26,24,0.06)] sm:p-5">
-                {filterContent}
+                {filterContent(true)}
               </div>
             </div>
           </div>
@@ -239,7 +279,7 @@ export function FilterSidebar() {
 
       <aside className="hidden w-full lg:block lg:w-[240px] lg:shrink-0">
         <div className="rounded-[14px] border border-[#E2E2DC] bg-white p-4 shadow-[0_1px_3px_rgba(26,26,24,0.06)] sm:p-5 lg:sticky lg:top-6">
-          {filterContent}
+          {filterContent(false)}
         </div>
       </aside>
     </>
