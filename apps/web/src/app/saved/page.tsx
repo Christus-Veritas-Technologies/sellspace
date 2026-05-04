@@ -3,9 +3,9 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 
 import { env } from "@sellspace/env/web";
-import { ListingCard } from "@sellspace/ui/components/listing-card";
 
 import { getPrimaryListingImage } from "@/lib/listing-images";
+import { SavedListingCardClient } from "./_listing-card-client";
 
 const BASE = env.NEXT_PUBLIC_SERVER_URL.replace(/\/$/, "");
 
@@ -62,17 +62,16 @@ export default async function SavedPage() {
         ) : (
           <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-4">
             {saved.map((item) => (
-              <ListingCard
+              <SavedListingCardClient
                 key={item.id}
                 id={item.id}
                 image={getPrimaryListingImage(item.images)}
-                condition={item.condition as never}
-                category={item.category as never}
+                condition={item.condition}
+                category={item.category}
                 title={item.title}
                 sellerName={item.seller.displayName ?? "Seller"}
                 city={item.seller.city ?? item.city ?? "Zimbabwe"}
                 price={item.price}
-                href={`/listings/${item.id}`}
               />
             ))}
           </div>
