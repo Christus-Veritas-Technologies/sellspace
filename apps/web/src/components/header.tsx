@@ -13,6 +13,12 @@ import { useAuthDialog } from "@/contexts/auth-dialog-context";
 import { useSession } from "@/lib/use-session";
 import { HeaderSearchBar } from "./header-search-bar";
 import { MobileNav } from "./mobile-nav";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@sellspace/ui/components/tooltip";
 
 // ─── Sub nav category labels ─────────────────────────────────────────────────
 
@@ -72,15 +78,32 @@ export default function SiteHeader() {
 
         {/* Right actions — desktop only */}
         <nav className="hidden md:flex ml-auto items-center gap-1">
-          <Link href="/saved" onClick={handleProtectedLinkClick} aria-label="Saved" className={navBtnClass}>
-            <BookmarkAdd01Icon size={20} color="currentColor" />
-          </Link>
-          <Link href="/inbox" onClick={handleProtectedLinkClick} aria-label="Inbox" className={navBtnClass}>
-            <Message01Icon size={20} color="currentColor" />
-          </Link>
-          <Link href="/profile" onClick={handleProtectedLinkClick} aria-label="Profile" className={navBtnClass}>
-            <UserIcon size={20} color="currentColor" />
-          </Link>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link href="/saved" onClick={handleProtectedLinkClick} aria-label="Saved" className={navBtnClass}>
+                  <BookmarkAdd01Icon size={20} color="currentColor" />
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent>Saved</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link href="/inbox" onClick={handleProtectedLinkClick} aria-label="Inbox" className={navBtnClass}>
+                  <Message01Icon size={20} color="currentColor" />
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent>Inbox</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link href="/profile" onClick={handleProtectedLinkClick} aria-label="Profile" className={navBtnClass}>
+                  <UserIcon size={20} color="currentColor" />
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent>Profile</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </nav>
 
         {/* Hamburger — mobile only */}
