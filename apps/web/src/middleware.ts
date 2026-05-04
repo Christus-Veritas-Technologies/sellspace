@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 
-const PUBLIC_PATHS = ["/", "/login", "/verify", "/logout", "/api/auth", "/search"];
+const PUBLIC_PATHS = ["/", "/login", "/verify", "/logout", "/api/auth", "/search", "/listings"];
 const STATIC_ASSET_PATH = /\.[^/]+$/;
 
 export function middleware(req: NextRequest): NextResponse {
