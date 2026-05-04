@@ -119,3 +119,28 @@ export async function deleteListingImageNative(imageId: string): Promise<void> {
     throw new Error(error.error ?? "Delete failed");
   }
 }
+
+/**
+ * Upload a chat image to the server
+ */
+export async function uploadChatImageNative(
+  fileUri: string,
+  fileName: string,
+): Promise<{ imageUrl: string }> {
+  const formData = new FormData();
+  const response = await fetch(fileUri);
+  const blob = await response.blob();
+  formData.append("file", blob, fileName);
+
+  const res = await authorizedFetch("/api/uploads/message", {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const error = (await res.json()) as { error?: string };
+    throw new Error(error.error ?? "Upload failed");
+  }
+
+  return (await res.json()) as { imageUrl: string };
+}
