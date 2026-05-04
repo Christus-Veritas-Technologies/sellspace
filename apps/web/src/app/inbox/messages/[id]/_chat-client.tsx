@@ -1,17 +1,26 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useRef, useState, useEffect, useCallback, useTransition } from "react";
 import { motion } from "framer-motion";
 
-import { sendMessage } from "./_actions";
+import { sendMessage, sendLocationMessage, sendImageMessage } from "./_actions";
+
+const ListingMap = dynamic(
+  () => import("@/components/listing-map").then((m) => m.ListingMap),
+  { ssr: false, loading: () => <div className="h-[160px] rounded-[14px] bg-[#F2F2EF] animate-pulse" /> },
+);
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 interface Message {
   id: string;
   body: string;
+  imageUrl?: string | null;
   createdAt: string;
   readAt: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   sender: { id: string; displayName: string | null };
 }
 
@@ -46,6 +55,46 @@ function ReadTicks({ readAt }: { readAt: string | null }) {
   return <span className="text-[10px] text-white/50">✓</span>;
 }
 
+function LocationBubble({ lat, lng, isMe }: { lat: number; lng: number; isMe: boolean }) {
+  return (
+    <div className={`w-[260px] rounded-[14px] overflow-hidden border ${isMe ? "border-white/20" : "border-[#E2E2DC]"}`}>
+      <ListingMap lat={lat} lng={lng} height={160} />
+      <a
+        href={`https://maps.google.com/?q=${lat},${lng}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={`flex items-center justify-center gap-1.5 py-2 text-[12px] font-[600] transition-colors ${
+          isMe ? "bg-[#C9521A] text-white hover:bg-[#B0461A]" : "bg-white text-[#E8621A] hover:bg-[#FEF3EE]"
+        }`}
+      >
+        📍 Open in Google Maps
+      </a>
+    </div>
+  );
+}
+
+function ImageBubble({ url, isMe }: { url: string; isMe: boolean }) {
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`block rounded-[14px] overflow-hidden border ${
+        isMe ? "border-white/20" : "border-[#E2E2DC]"
+      }`}
+      style={{ maxWidth: 260 }}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={url}
+        alt="Sent image"
+        className="block w-full max-h-[220px] object-cover"
+        loading="lazy"
+      />
+    </a>
+  );
+}
+
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export function ChatClient({
@@ -67,12 +116,15 @@ export function ChatClient({
   const [body, setBody] = useState("");
   const [error, setError] = useState("");
   const [pending, startTransition] = useTransition();
+  const [locationPending, setLocationPending] = useState(false);
+  const [imageUploading, setImageUploading] = useState(false);
   const [isOtherTyping, setIsOtherTyping] = useState(false);
   const [isOtherOnline, setIsOtherOnline] = useState(initialOnline);
   const [showEmoji, setShowEmoji] = useState(false);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const typingClearRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const typingSentRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -224,6 +276,81 @@ export function ChatClient({
     inputRef.current?.focus();
   }
 
+  async function handleImageUpload(file: File) {
+    setError("");
+    setImageUploading(true);
+    const tempId = `temp-img-${Date.now()}`;
+    const localUrl = URL.createObjectURL(file);
+    const tempMsg: Message = {
+      id: tempId,
+      body: "📷 Photo",
+      imageUrl: localUrl,
+      createdAt: new Date().toISOString(),
+      readAt: null,
+      sender: { id: currentUserId, displayName: null },
+    };
+    setMessages((prev) => [...prev, tempMsg]);
+    scrollToBottom();
+
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const uploadRes = await fetch("/api/uploads/message", { method: "POST", body: form });
+      const uploadData = (await uploadRes.json()) as { imageUrl?: string; error?: string };
+      if (!uploadRes.ok || !uploadData.imageUrl) throw new Error(uploadData.error ?? "Upload failed");
+
+      const sendData = await sendImageMessage(threadId, uploadData.imageUrl);
+      const msg = (sendData as { message: Message }).message;
+      setMessages((prev) => prev.map((m) => (m.id === tempId ? msg : m)));
+    } catch (err: unknown) {
+      setMessages((prev) => prev.filter((m) => m.id !== tempId));
+      setError((err as Error).message ?? "Failed to send image.");
+    } finally {
+      URL.revokeObjectURL(localUrl);
+      setImageUploading(false);
+    }
+  }
+
+  function handleShareLocation() {
+    if (!navigator.geolocation) {
+      setError("Geolocation is not supported by your browser.");
+      return;
+    }
+    setLocationPending(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        const tempId = `temp-loc-${Date.now()}`;
+        const tempMsg: Message = {
+          id: tempId,
+          body: "📍 Location",
+          createdAt: new Date().toISOString(),
+          readAt: null,
+          latitude: lat,
+          longitude: lng,
+          sender: { id: currentUserId, displayName: null },
+        };
+        setMessages((prev) => [...prev, tempMsg]);
+        scrollToBottom();
+        void sendLocationMessage(threadId, lat, lng)
+          .then((data) => {
+            const msg = (data as { message: Message }).message;
+            setMessages((prev) => prev.map((m) => (m.id === tempId ? msg : m)));
+          })
+          .catch((err: unknown) => {
+            setMessages((prev) => prev.filter((m) => m.id !== tempId));
+            setError((err as Error).message ?? "Failed to send location.");
+          })
+          .finally(() => setLocationPending(false));
+      },
+      () => {
+        setError("Location access denied.");
+        setLocationPending(false);
+      },
+    );
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!body.trim()) return;
@@ -297,15 +424,21 @@ export function ChatClient({
                   isMe ? "items-end" : "items-start"
                 }`}
               >
-                <div
-                  className={`px-4 py-2.5 rounded-[14px] text-[14px] leading-relaxed break-words whitespace-pre-wrap text-wrap ${
-                    isMe
-                      ? "bg-[#E8621A] text-white rounded-tr-[4px]"
-                      : "bg-white border border-[#E2E2DC] text-[#1A1A18] rounded-tl-[4px]"
-                  }`}
-                >
-                  {msg.body}
-                </div>
+                {msg.imageUrl ? (
+                  <ImageBubble url={msg.imageUrl} isMe={isMe} />
+                ) : msg.latitude != null && msg.longitude != null ? (
+                  <LocationBubble lat={msg.latitude} lng={msg.longitude} isMe={isMe} />
+                ) : (
+                  <div
+                    className={`px-4 py-2.5 rounded-[14px] text-[14px] leading-relaxed break-words whitespace-pre-wrap text-wrap ${
+                      isMe
+                        ? "bg-[#E8621A] text-white rounded-tr-[4px]"
+                        : "bg-white border border-[#E2E2DC] text-[#1A1A18] rounded-tl-[4px]"
+                    }`}
+                  >
+                    {msg.body}
+                  </div>
+                )}
                 <div
                   className={`flex items-center gap-1 px-1 ${
                     isMe ? "flex-row" : "flex-row"
@@ -325,6 +458,19 @@ export function ChatClient({
 
       {/* Input area */}
       <form onSubmit={handleSubmit} className="flex gap-2 border-t border-[#E2E2DC] pt-4">
+        {/* Hidden file input for image uploads */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/gif"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) void handleImageUpload(file);
+            e.target.value = "";
+          }}
+        />
+
         {/* Emoji picker */}
         <div ref={emojiRef} className="relative shrink-0">
           <button
@@ -363,6 +509,34 @@ export function ChatClient({
           className="flex-1 h-11 px-4 rounded-full border border-[#E2E2DC] bg-white text-[14px]
                      text-[#1A1A18] focus:outline-none focus:border-[#E8621A] disabled:opacity-60"
         />
+        {/* Location button */}
+        <button
+          type="button"
+          onClick={handleShareLocation}
+          disabled={locationPending}
+          className="w-11 h-11 flex items-center justify-center rounded-full border border-[#E2E2DC] bg-white hover:bg-[#FEF3EE] transition-colors text-[20px] shrink-0 disabled:opacity-50"
+          aria-label="Share location"
+        >
+          {locationPending ? (
+            <span className="w-4 h-4 border-2 border-[#E8621A] border-t-transparent rounded-full animate-spin" />
+          ) : (
+            "📍"
+          )}
+        </button>
+        {/* Image button */}
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={imageUploading}
+          className="w-11 h-11 flex items-center justify-center rounded-full border border-[#E2E2DC] bg-white hover:bg-[#FEF3EE] transition-colors text-[20px] shrink-0 disabled:opacity-50"
+          aria-label="Send image"
+        >
+          {imageUploading ? (
+            <span className="w-4 h-4 border-2 border-[#E8621A] border-t-transparent rounded-full animate-spin" />
+          ) : (
+            "📷"
+          )}
+        </button>
         <button
           type="submit"
           disabled={pending || !body.trim()}
