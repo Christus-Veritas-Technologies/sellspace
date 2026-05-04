@@ -1,12 +1,16 @@
-import { ArrowLeft01Icon, SentIcon } from "@hugeicons/core-free-icons";
+import { ArrowLeft01Icon, Camera01Icon, Location01Icon, SentIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import * as ImagePicker from "expo-image-picker";
+import * as Location from "expo-location";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
+  Image,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   Pressable,
   SafeAreaView,
@@ -18,8 +22,80 @@ import {
 import { colors, radii, spacing } from "@sellspace/ui/theme";
 import type { ChatMessage } from "@/lib/messages";
 import { messagesApi } from "@/lib/messages";
+import { uploadChatImageNative } from "@/lib/uploads";
 import { useServerEvents } from "@/lib/notifications";
 import { getStoredUserId } from "@/lib/user";
+
+// ─── Image bubble ────────────────────────────────────────────────────────────
+
+function ImageBubble({ url, isMine }: { url: string; isMine: boolean }) {
+  return (
+    <Pressable
+      onPress={() => void Linking.openURL(url)}
+      style={{
+        borderRadius: radii.lg,
+        borderBottomRightRadius: isMine ? radii.sm : radii.lg,
+        borderBottomLeftRadius: isMine ? radii.lg : radii.sm,
+        overflow: "hidden",
+        borderWidth: isMine ? 0 : 1,
+        borderColor: colors.border,
+      }}
+    >
+      <Image
+        source={{ uri: url }}
+        style={{ width: 220, height: 220 }}
+        resizeMode="cover"
+      />
+    </Pressable>
+  );
+}
+
+// ─── Location bubble ─────────────────────────────────────────────────────────
+
+function LocationBubble({ lat, lng, isMine }: { lat: number; lng: number; isMine: boolean }) {
+  return (
+    <Pressable
+      onPress={() => void Linking.openURL(`https://maps.google.com/?q=${lat},${lng}`)}
+      style={{
+        backgroundColor: isMine ? colors.primary : colors.surface,
+        borderRadius: radii.lg,
+        borderBottomRightRadius: isMine ? radii.sm : radii.lg,
+        borderBottomLeftRadius: isMine ? radii.lg : radii.sm,
+        paddingHorizontal: spacing[4],
+        paddingVertical: spacing[3],
+        borderWidth: isMine ? 0 : 1,
+        borderColor: colors.border,
+        flexDirection: "row",
+        alignItems: "center",
+        gap: spacing[2],
+        minWidth: 160,
+      }}
+    >
+      <Text style={{ fontSize: 22 }}>📍</Text>
+      <View style={{ flex: 1 }}>
+        <Text
+          style={{
+            fontFamily: "DMSans_600SemiBold",
+            fontSize: 13,
+            color: isMine ? colors.primaryForeground : colors.text,
+          }}
+        >
+          Location shared
+        </Text>
+        <Text
+          style={{
+            fontFamily: "DMSans_400Regular",
+            fontSize: 11,
+            color: isMine ? "rgba(255,255,255,0.7)" : colors.textMuted,
+            marginTop: 2,
+          }}
+        >
+          Tap to open in Maps
+        </Text>
+      </View>
+    </Pressable>
+  );
+}
 
 // ─── Message bubble ───────────────────────────────────────────────────────────
 
@@ -50,29 +126,35 @@ function Bubble({ msg, isMine }: { msg: ChatMessage; isMine: boolean }) {
           {msg.sender.displayName}
         </Text>
       )}
-      <View
-        style={{
-          backgroundColor: isMine ? colors.primary : colors.surface,
-          borderRadius: radii.lg,
-          borderBottomRightRadius: isMine ? radii.sm : radii.lg,
-          borderBottomLeftRadius: isMine ? radii.lg : radii.sm,
-          paddingHorizontal: spacing[4],
-          paddingVertical: spacing[3],
-          borderWidth: isMine ? 0 : 1,
-          borderColor: colors.border,
-        }}
-      >
-        <Text
+      {msg.imageUrl != null ? (
+        <ImageBubble url={msg.imageUrl} isMine={isMine} />
+      ) : msg.latitude != null && msg.longitude != null ? (
+        <LocationBubble lat={msg.latitude} lng={msg.longitude} isMine={isMine} />
+      ) : (
+        <View
           style={{
-            fontFamily: "DMSans_400Regular",
-            fontSize: 14,
-            color: isMine ? colors.primaryForeground : colors.text,
-            lineHeight: 20,
+            backgroundColor: isMine ? colors.primary : colors.surface,
+            borderRadius: radii.lg,
+            borderBottomRightRadius: isMine ? radii.sm : radii.lg,
+            borderBottomLeftRadius: isMine ? radii.lg : radii.sm,
+            paddingHorizontal: spacing[4],
+            paddingVertical: spacing[3],
+            borderWidth: isMine ? 0 : 1,
+            borderColor: colors.border,
           }}
         >
-          {msg.body}
-        </Text>
-      </View>
+          <Text
+            style={{
+              fontFamily: "DMSans_400Regular",
+              fontSize: 14,
+              color: isMine ? colors.primaryForeground : colors.text,
+              lineHeight: 20,
+            }}
+          >
+            {msg.body}
+          </Text>
+        </View>
+      )}
       <Text
         style={{
           fontFamily: "DMSans_400Regular",
@@ -97,6 +179,8 @@ export default function ChatScreen() {
   const queryClient = useQueryClient();
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
+  const [sendingLocation, setSendingLocation] = useState(false);
+  const [sendingImage, setSendingImage] = useState(false);
   const [myUserId, setMyUserId] = useState<string | null>(null);
   const listRef = useRef<FlatList<ChatMessage>>(null);
 
@@ -135,6 +219,71 @@ export default function ChatScreen() {
     );
     setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 50);
   });
+
+  async function handlePickImage() {
+    if (sendingImage) return;
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.85,
+      allowsEditing: false,
+    });
+    if (result.canceled || !result.assets[0]) return;
+    const asset = result.assets[0];
+    setSendingImage(true);
+    try {
+      const fileName = asset.fileName ?? `chat-${Date.now()}.jpg`;
+      const { imageUrl } = await uploadChatImageNative(asset.uri, fileName);
+      const { message } = await messagesApi.sendImageMessage(id, imageUrl);
+      queryClient.setQueryData(
+        ["thread", id],
+        (old: { thread: NonNullable<typeof data>["thread"] } | undefined) => {
+          if (!old) return old;
+          return {
+            thread: {
+              ...old.thread,
+              messages: [...old.thread.messages, message],
+            },
+          };
+        },
+      );
+      setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 50);
+    } catch {
+      // silently ignore on failure
+    } finally {
+      setSendingImage(false);
+    }
+  }
+
+  async function handleShareLocation() {
+    if (sendingLocation) return;
+    setSendingLocation(true);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        setSendingLocation(false);
+        return;
+      }
+      const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+      const { message } = await messagesApi.sendLocation(id, pos.coords.latitude, pos.coords.longitude);
+      queryClient.setQueryData(
+        ["thread", id],
+        (old: { thread: NonNullable<typeof data>["thread"] } | undefined) => {
+          if (!old) return old;
+          return {
+            thread: {
+              ...old.thread,
+              messages: [...old.thread.messages, message],
+            },
+          };
+        },
+      );
+      setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 50);
+    } catch {
+      // silently ignore – user may have denied permission
+    } finally {
+      setSendingLocation(false);
+    }
+  }
 
   async function handleSend() {
     const trimmed = text.trim();
@@ -297,6 +446,48 @@ export default function ChatScreen() {
               placeholder="Type a message…"
               placeholderTextColor={colors.textMuted}
             />
+            <Pressable
+              onPress={() => void handlePickImage()}
+              disabled={sendingImage}
+              style={({ pressed }) => ({
+                width: 44,
+                height: 44,
+                borderRadius: 22,
+                backgroundColor: colors.surface,
+                borderWidth: 1,
+                borderColor: colors.border,
+                alignItems: "center",
+                justifyContent: "center",
+                opacity: pressed || sendingImage ? 0.6 : 1,
+              })}
+            >
+              {sendingImage ? (
+                <ActivityIndicator size="small" color={colors.primary} />
+              ) : (
+                <HugeiconsIcon icon={Camera01Icon} size={20} color={colors.primary} />
+              )}
+            </Pressable>
+            <Pressable
+              onPress={() => void handleShareLocation()}
+              disabled={sendingLocation}
+              style={({ pressed }) => ({
+                width: 44,
+                height: 44,
+                borderRadius: 22,
+                backgroundColor: colors.surface,
+                borderWidth: 1,
+                borderColor: colors.border,
+                alignItems: "center",
+                justifyContent: "center",
+                opacity: pressed || sendingLocation ? 0.6 : 1,
+              })}
+            >
+              {sendingLocation ? (
+                <ActivityIndicator size="small" color={colors.primary} />
+              ) : (
+                <HugeiconsIcon icon={Location01Icon} size={20} color={colors.primary} />
+              )}
+            </Pressable>
             <Pressable
               onPress={handleSend}
               disabled={!text.trim() || sending}
