@@ -93,6 +93,8 @@ model Listing {
   condition   Condition
   category    Category
   city        String?
+  latitude    Float?
+  longitude   Float?
   sold        Boolean   @default(false)
   views       Int       @default(0)
   createdAt   DateTime  @default(now())
@@ -189,8 +191,11 @@ model MessageThread {
 model Message {
   id        String    @id @default(cuid())
   body      String
+  imageUrl  String?
   createdAt DateTime  @default(now())
   readAt    DateTime?
+  latitude  Float?
+  longitude Float?
 
   threadId String
   thread   MessageThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
