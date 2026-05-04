@@ -79,9 +79,23 @@ export const messageRoutes = new Hono()
     });
     const countMap = new Map(unreadGroups.map((r) => [r.threadId, r._count.id]));
 
-    return c.json({
-      threads: threads.map((t) => ({ ...t, unreadCount: countMap.get(t.id) ?? 0 })),
+    // Transform threads to include otherUser (the other participant)
+    const transformedThreads = threads.map((t) => {
+      const otherUser = t.buyerId === userId ? t.seller : t.buyer;
+      const lastMessage = t.messages[0]
+        ? { body: t.messages[0].body, createdAt: t.messages[0].createdAt }
+        : null;
+
+      return {
+        id: t.id,
+        listing: t.listing,
+        otherUser,
+        lastMessage,
+        unreadCount: countMap.get(t.id) ?? 0,
+      };
     });
+
+    return c.json({ threads: transformedThreads });
   })
 
   // POST /api/messages/threads — start or reuse thread, send first message

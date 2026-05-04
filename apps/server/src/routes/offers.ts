@@ -71,7 +71,33 @@ export const offerRoutes = new Hono()
       include: threadInclude,
     });
 
-    return c.json({ threads });
+    // Transform threads to include counterpart (the other user)
+    const transformedThreads = threads.map((thread) => {
+      const counterpart = thread.buyerId === userId ? thread.seller : thread.buyer;
+      
+      // Extract the latest amount from the most recent message
+      const latestAmount = thread.messages[0]?.amount ?? 0;
+      
+      // Extract the status from the most recent message type
+      const messageTypeMap: Record<string, string> = {
+        offer_made: "PENDING",
+        counter_offered: "COUNTERED",
+        offer_accepted: "ACCEPTED",
+        offer_declined: "DECLINED",
+      };
+      const status = thread.messages[0]?.type ? messageTypeMap[thread.messages[0].type] : "PENDING";
+
+      return {
+        id: thread.id,
+        listing: thread.listing,
+        counterpart,
+        latestAmount,
+        status,
+        createdAt: thread.createdAt,
+      };
+    });
+
+    return c.json({ threads: transformedThreads });
   })
 
   // GET /api/offers/:id — full thread with all messages

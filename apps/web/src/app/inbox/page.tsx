@@ -29,7 +29,7 @@ export default async function InboxPage() {
 
   const offers =
     offersRes.status === "fulfilled" && offersRes.value.ok
-      ? ((await offersRes.value.json()) as { offers: unknown[] }).offers ?? []
+      ? ((await offersRes.value.json()) as { threads: unknown[] }).threads ?? []
       : [];
 
   return (
