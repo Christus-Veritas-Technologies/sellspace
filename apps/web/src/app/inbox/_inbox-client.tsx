@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { DEFAULT_LISTING_IMAGE_URL } from "@/lib/listing-images";
 
@@ -45,49 +46,168 @@ export function InboxClient({
   threads: MessageThread[];
   offers: OfferThread[];
 }) {
+  const router = useRouter();
   const [tab, setTab] = useState<"messages" | "offers">("messages");
+  const [localThreads, setLocalThreads] = useState<MessageThread[]>(threads);
+  const [localOffers] = useState<OfferThread[]>(offers);
+  const wsRef = useRef<WebSocket | null>(null);
+
+  // Sync server-rendered props when router.refresh() delivers new data
+  useEffect(() => {
+    setLocalThreads(threads);
+  }, [threads]);
+
+  // Derived badge counts
+  const totalUnread = localThreads.reduce((sum, t) => sum + t.unreadCount, 0);
+  const actionableOffers = localOffers.filter(
+    (o) => o.status === "PENDING" || o.status === "COUNTERED",
+  ).length;
+
+  // WebSocket for real-time inbox updates + browser notifications
+  useEffect(() => {
+    let ws: WebSocket | null = null;
+    let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
+    let destroyed = false;
+
+    // Request notification permission once
+    if (typeof Notification !== "undefined" && Notification.permission === "default") {
+      void Notification.requestPermission();
+    }
+
+    async function connect() {
+      if (destroyed) return;
+      try {
+        const res = await fetch("/api/auth/token");
+        const { token } = (await res.json()) as { token: string | null };
+        if (!token || destroyed) return;
+
+        const wsBase = (process.env.NEXT_PUBLIC_SERVER_URL ?? "http://localhost:9999")
+          .replace(/^https/, "wss")
+          .replace(/^http/, "ws");
+
+        ws = new WebSocket(`${wsBase}/ws?token=${encodeURIComponent(token)}`);
+        wsRef.current = ws;
+
+        ws.onmessage = (e) => {
+          if (destroyed) return;
+          let data: Record<string, unknown>;
+          try {
+            data = JSON.parse(e.data as string) as Record<string, unknown>;
+          } catch {
+            return;
+          }
+
+          if (data.event === "message" && typeof data.threadId === "string") {
+            const msg = data.message as {
+              body: string;
+              createdAt: string;
+              sender?: { displayName?: string | null };
+            };
+
+            setLocalThreads((prev) => {
+              const idx = prev.findIndex((t) => t.id === data.threadId);
+              if (idx === -1) {
+                // Unknown thread — refresh to get it from server
+                if (!destroyed) router.refresh();
+                return prev;
+              }
+              return prev.map((t) =>
+                t.id === data.threadId
+                  ? {
+                      ...t,
+                      unreadCount: t.unreadCount + 1,
+                      lastMessage: { body: msg.body, createdAt: msg.createdAt },
+                    }
+                  : t,
+              );
+            });
+
+            // Browser notification when tab is not visible
+            if (
+              typeof Notification !== "undefined" &&
+              Notification.permission === "granted" &&
+              document.visibilityState !== "visible"
+            ) {
+              const sender =
+                (msg.sender as { displayName?: string | null } | undefined)
+                  ?.displayName ?? "Someone";
+              new Notification(`new message from ${sender}`, {
+                body: msg.body.slice(0, 100),
+                icon: "/favicon.ico",
+              });
+            }
+          }
+        };
+
+        ws.onclose = () => {
+          wsRef.current = null;
+          if (!destroyed) reconnectTimeout = setTimeout(connect, 3000);
+        };
+      } catch {
+        if (!destroyed) reconnectTimeout = setTimeout(connect, 5000);
+      }
+    }
+
+    void connect();
+
+    return () => {
+      destroyed = true;
+      ws?.close();
+      if (reconnectTimeout) clearTimeout(reconnectTimeout);
+    };
+  }, [router]);
+
+  function handleThreadClick(threadId: string) {
+    // Optimistically clear unread badge before navigation
+    setLocalThreads((prev) =>
+      prev.map((t) => (t.id === threadId ? { ...t, unreadCount: 0 } : t)),
+    );
+    router.push(`/inbox/messages/${threadId}`);
+  }
 
   return (
     <div>
       {/* Tabs */}
       <div className="flex border-b border-[#E2E2DC] mb-6">
-        {(["messages", "offers"] as const).map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={`px-5 py-3 text-[14px] font-[600] capitalize border-b-2 -mb-px transition-colors ${
-              tab === t
-                ? "border-[#E8621A] text-[#E8621A]"
-                : "border-transparent text-[#8A8A82] hover:text-[#1A1A18]"
-            }`}
-          >
-            {t}
-            {t === "messages" && threads.length > 0 && (
-              <span className="ml-1.5 text-[11px] bg-[#E8621A] text-white rounded-full px-1.5 py-0.5">
-                {threads.length}
-              </span>
-            )}
-            {t === "offers" && offers.length > 0 && (
-              <span className="ml-1.5 text-[11px] bg-[#0D3B2E] text-white rounded-full px-1.5 py-0.5">
-                {offers.length}
-              </span>
-            )}
-          </button>
-        ))}
+        {(["messages", "offers"] as const).map((t) => {
+          const badgeCount = t === "messages" ? totalUnread : actionableOffers;
+          return (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={`px-5 py-3 text-[14px] font-[600] capitalize border-b-2 -mb-px transition-colors flex items-center gap-1.5 ${
+                tab === t
+                  ? "border-[#E8621A] text-[#E8621A]"
+                  : "border-transparent text-[#8A8A82] hover:text-[#1A1A18]"
+              }`}
+            >
+              {t}
+              {badgeCount > 0 && (
+                <div
+                  className={`h-[18px] min-w-[18px] px-1 rounded-full flex items-center justify-center text-[10px] font-[700] text-white leading-none ${
+                    t === "messages" ? "bg-[#E8621A]" : "bg-[#0D3B2E]"
+                  }`}
+                >
+                  {badgeCount > 99 ? "99+" : badgeCount}
+                </div>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {/* Messages tab */}
       {tab === "messages" && (
         <div className="space-y-2">
-          {threads.length === 0 ? (
+          {localThreads.length === 0 ? (
             <p className="text-center py-16 text-[#8A8A82] text-[14px]">No messages yet.</p>
           ) : (
-            threads.map((thread) => (
-              <a
+            localThreads.map((thread) => (
+              <button
                 key={thread.id}
-                href={`/inbox/messages/${thread.id}`}
-                className="flex items-center gap-4 p-4 bg-white rounded-[12px] border border-[#E2E2DC]
-                           hover:border-[#E8621A] transition-colors group"
+                onClick={() => handleThreadClick(thread.id)}
+                className="w-full flex items-center gap-4 p-4 bg-white rounded-[12px] border border-[#E2E2DC]
+                           hover:border-[#E8621A] transition-colors text-left"
               >
                 {/* Listing thumb */}
                 <div className="w-14 h-14 rounded-[8px] overflow-hidden bg-[#EFEFEB] shrink-0">
@@ -104,23 +224,31 @@ export function InboxClient({
                   </p>
                   <p className="text-[12px] text-[#8A8A82] truncate">{thread.listing.title}</p>
                   {thread.lastMessage && (
-                    <p className="text-[12px] text-[#4A4A45] truncate mt-0.5">
+                    <p
+                      className={`text-[12px] truncate mt-0.5 ${
+                        thread.unreadCount > 0
+                          ? "text-[#1A1A18] font-[500]"
+                          : "text-[#4A4A45]"
+                      }`}
+                    >
                       {thread.lastMessage.body}
                     </p>
                   )}
                 </div>
 
-                <div className="shrink-0 text-right">
+                <div className="shrink-0 text-right flex flex-col items-end gap-1">
                   {thread.lastMessage && (
-                    <p className="text-[11px] text-[#8A8A82]">{formatRelative(thread.lastMessage.createdAt)}</p>
+                    <p className="text-[11px] text-[#8A8A82]">
+                      {formatRelative(thread.lastMessage.createdAt)}
+                    </p>
                   )}
                   {thread.unreadCount > 0 && (
-                    <span className="inline-block mt-1 w-5 h-5 rounded-full bg-[#E8621A] text-white text-[10px] font-[700] flex items-center justify-center">
-                      {thread.unreadCount}
-                    </span>
+                    <div className="w-5 h-5 rounded-full bg-[#E8621A] text-white text-[10px] font-[700] flex items-center justify-center leading-none">
+                      {thread.unreadCount > 9 ? "9+" : thread.unreadCount}
+                    </div>
                   )}
                 </div>
-              </a>
+              </button>
             ))
           )}
         </div>
@@ -129,12 +257,13 @@ export function InboxClient({
       {/* Offers tab */}
       {tab === "offers" && (
         <div className="space-y-2">
-          {offers.length === 0 ? (
+          {localOffers.length === 0 ? (
             <p className="text-center py-16 text-[#8A8A82] text-[14px]">No offers yet.</p>
           ) : (
-            offers.map((offer) => {
+            localOffers.map((offer) => {
               const statusConfig: Record<string, { label: string; className: string }> = {
                 PENDING: { label: "Pending", className: "bg-[#F4A61D] text-[#1A1A18]" },
+                COUNTERED: { label: "Countered", className: "bg-[#EFEFEB] text-[#4A4A45]" },
                 ACCEPTED: { label: "Accepted", className: "bg-[#0D3B2E] text-[#FAFAF8]" },
                 DECLINED: { label: "Declined", className: "bg-[#FEE2E2] text-[#DC2626]" },
                 CANCELLED: { label: "Cancelled", className: "bg-[#EFEFEB] text-[#4A4A45]" },
@@ -157,7 +286,9 @@ export function InboxClient({
                   </div>
 
                   <div className="flex-1 min-w-0">
-                    <p className="text-[13px] font-[600] text-[#1A1A18] truncate">{offer.listing.title}</p>
+                    <p className="text-[13px] font-[600] text-[#1A1A18] truncate">
+                      {offer.listing.title}
+                    </p>
                     <p className="text-[12px] text-[#8A8A82] truncate">
                       {offer.counterpart.displayName ?? "User"}
                     </p>
@@ -167,10 +298,14 @@ export function InboxClient({
                   </div>
 
                   <div className="shrink-0 text-right">
-                    <span className={`text-[11px] font-[600] px-2 py-1 rounded-[6px] ${sc.className}`}>
+                    <span
+                      className={`text-[11px] font-[600] px-2 py-1 rounded-[6px] ${sc.className}`}
+                    >
                       {sc.label}
                     </span>
-                    <p className="text-[11px] text-[#8A8A82] mt-1">{formatRelative(offer.createdAt)}</p>
+                    <p className="text-[11px] text-[#8A8A82] mt-1">
+                      {formatRelative(offer.createdAt)}
+                    </p>
                   </div>
                 </a>
               );
