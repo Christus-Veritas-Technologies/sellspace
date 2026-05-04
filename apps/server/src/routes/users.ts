@@ -5,6 +5,7 @@ import { z } from "zod";
 import db from "@sellspace/db";
 
 import { requireAuth } from "../middleware/auth";
+import { wsManager } from "../lib/ws";
 
 // ─── Zod schemas ─────────────────────────────────────────────────────────────
 
@@ -90,6 +91,12 @@ export const userRoutes = new Hono()
       averageRating: ratingAggregate._avg.rating,
       reviewCount: ratingAggregate._count.rating,
     });
+  })
+
+  // GET /api/users/:id/presence — is user currently online?
+  .get("/:id/presence", async (c) => {
+    const id = c.req.param("id");
+    return c.json({ online: wsManager.isOnline(id) });
   })
 
   // GET /api/users/:id — public profile
