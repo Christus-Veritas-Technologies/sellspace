@@ -34,14 +34,35 @@ export default async function ChatPage({
       listing: { id: string; title: string; images: { url: string }[] };
       buyer: { id: string; displayName: string | null };
       seller: { id: string; displayName: string | null };
-      messages: { id: string; body: string; createdAt: string; sender: { id: string; displayName: string | null } }[];
+      messages: {
+        id: string;
+        body: string;
+        createdAt: string;
+        readAt: string | null;
+        sender: { id: string; displayName: string | null };
+      }[];
     };
   };
 
-  const meData = meRes.ok ? (await meRes.json()) as { user: { id: string } } : null;
+  const meData = meRes.ok ? ((await meRes.json()) as { user: { id: string } }) : null;
   const currentUserId = meData?.user.id ?? "";
 
   const otherUser = thread.buyer.id === currentUserId ? thread.seller : thread.buyer;
+
+  // Fetch initial online presence for the other user
+  let initialOnline = false;
+  try {
+    const presenceRes = await fetch(`${BASE}/api/users/${otherUser.id}/presence`, {
+      headers,
+      cache: "no-store",
+    });
+    if (presenceRes.ok) {
+      const presenceData = (await presenceRes.json()) as { online: boolean };
+      initialOnline = presenceData.online;
+    }
+  } catch {
+    // Non-fatal — defaults to offline
+  }
 
   return (
     <main className="bg-[#F2F2EF] min-h-screen">
@@ -75,6 +96,9 @@ export default async function ChatPage({
             threadId={thread.id}
             initialMessages={thread.messages}
             currentUserId={currentUserId}
+            otherUserId={otherUser.id}
+            otherUserName={otherUser.displayName ?? "User"}
+            initialOnline={initialOnline}
           />
         </div>
       </div>
