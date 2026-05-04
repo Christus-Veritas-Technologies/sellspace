@@ -68,5 +68,6 @@ app.route("/ws", wsRoutes);
 export default {
   fetch: app.fetch,
   websocket,
+  hostname: '0.0.0.0',
   port: 9999,
 };
