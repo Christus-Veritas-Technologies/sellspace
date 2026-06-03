@@ -20,6 +20,33 @@ import { websocket, wsRoutes } from "./routes/ws";
 const app = new Hono();
 
 app.use(logger());
+// Global error and 500-response logger: ensure any 500 response or thrown error is logged.
+app.use("/*", async (c, next) => {
+  try {
+    await next();
+    const res: any = c.res;
+    if (res && res.status === 500) {
+      try {
+        let bodyText: string | undefined = undefined;
+        if (res && typeof res.clone === "function") {
+          bodyText = await res.clone().text().catch(() => undefined);
+        } else if (res && typeof res.text === "function") {
+          bodyText = await res.text().catch(() => undefined);
+        }
+        console.error("HTTP 500 response", {
+          method: c.req.method,
+          path: c.req.path,
+          body: bodyText,
+        });
+      } catch (e) {
+        console.error("HTTP 500 response (failed to read body):", e);
+      }
+    }
+  } catch (err) {
+    console.error(err);
+    return c.json({ error: "Internal Server Error" }, 500);
+  }
+});
 app.use(
   "/*",
   cors({
