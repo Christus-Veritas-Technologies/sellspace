@@ -1,11 +1,13 @@
-import { PrismaLibSql } from "@prisma/adapter-libsql";
+import { PrismaPg } from "@prisma/adapter-pg";
 import { env } from "@sellspace/env/server";
 
 import { PrismaClient } from "../prisma/generated/client";
 
 export function createPrismaClient() {
-  const adapter = new PrismaLibSql({
-    url: env.DATABASE_URL,
+  const adapter = new PrismaPg({
+    connectionString: env.DATABASE_URL,
+    // If your Postgres setup requires relaxed SSL validation, enable below:
+    // ssl: { rejectUnauthorized: false },
   });
 
   return new PrismaClient({ adapter });

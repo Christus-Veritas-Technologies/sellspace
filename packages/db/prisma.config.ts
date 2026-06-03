@@ -1,21 +1,20 @@
 import path from "node:path";
 
 import dotenv from "dotenv";
-import { defineConfig } from "prisma/config";
+import { defineConfig, env } from "prisma/config";
 
+// Load the server .env so CLI commands work without extra env setup
 dotenv.config({
   path: "../../apps/server/.env",
 });
 
-// Allow building in environments without DATABASE_URL (e.g., EAS mobile builds)
-const databaseUrl = process.env.DATABASE_URL || "postgresql://localhost/sellspace";
-
 export default defineConfig({
-  schema: path.join("prisma", "schema"),
+  schema: path.join("prisma", "schema", "schema.prisma"),
   migrations: {
     path: path.join("prisma", "migrations"),
   },
   datasource: {
-    url: databaseUrl,
+    url: env("DATABASE_URL"),
+    shadowDatabaseUrl: env("SHADOW_DATABASE_URL"),
   },
 });
