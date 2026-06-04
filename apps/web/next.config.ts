@@ -9,6 +9,9 @@ const nextConfig: NextConfig = {
     },
   },
   allowedDevOrigins: ['192.168.100.61', '192.168.1.9'],
+  images: {
+    domains: ['pub-e3987c0eabed48adada47ada313dfa7b.r2.dev'],
+  },
   headers: async () => {
     return [
       {
