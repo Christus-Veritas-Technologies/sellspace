@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import { useRef, useState, useEffect, useCallback, useTransition } from "react";
 import { motion } from "framer-motion";
+import { Camera01Icon, Location01Icon, Message01Icon } from "hugeicons-react";
 
 import { sendMessage, sendLocationMessage, sendImageMessage } from "./_actions";
 
@@ -67,7 +68,8 @@ function LocationBubble({ lat, lng, isMe }: { lat: number; lng: number; isMe: bo
           isMe ? "bg-[#C9521A] text-white hover:bg-[#B0461A]" : "bg-white text-[#E8621A] hover:bg-[#FEF3EE]"
         }`}
       >
-        📍 Open in Google Maps
+        <Location01Icon size={14} color="currentColor" />
+        <span>Open in Google Maps</span>
       </a>
     </div>
   );
@@ -283,7 +285,7 @@ export function ChatClient({
     const localUrl = URL.createObjectURL(file);
     const tempMsg: Message = {
       id: tempId,
-      body: "📷 Photo",
+      body: "Photo",
       imageUrl: localUrl,
       createdAt: new Date().toISOString(),
       readAt: null,
@@ -324,7 +326,7 @@ export function ChatClient({
         const tempId = `temp-loc-${Date.now()}`;
         const tempMsg: Message = {
           id: tempId,
-          body: "📍 Location",
+          body: "Location",
           createdAt: new Date().toISOString(),
           readAt: null,
           latitude: lat,
@@ -457,7 +459,7 @@ export function ChatClient({
       {error && <p className="text-[12px] text-[#DC2626] px-2 mb-2">{error}</p>}
 
       {/* Input area */}
-      <form onSubmit={handleSubmit} className="flex gap-2 border-t border-[#E2E2DC] pt-4">
+      <form onSubmit={handleSubmit} className="flex gap-2 flex-wrap border-t border-[#E2E2DC] pt-4">
         {/* Hidden file input for image uploads */}
         <input
           ref={fileInputRef}
@@ -479,7 +481,7 @@ export function ChatClient({
             className="w-11 h-11 flex items-center justify-center rounded-full border border-[#E2E2DC] bg-white hover:bg-[#F2F2EF] transition-colors text-[20px]"
             aria-label="Open emoji picker"
           >
-            😊
+            <Message01Icon size={18} color="currentColor" />
           </button>
           {showEmoji && (
             <div className="absolute bottom-14 left-0 z-50 bg-white border border-[#E2E2DC] rounded-[12px] shadow-lg p-2 w-[224px]">
@@ -506,7 +508,7 @@ export function ChatClient({
           onChange={(e) => handleBodyChange(e.target.value)}
           placeholder="Type a message…"
           disabled={pending}
-          className="flex-1 h-11 px-4 rounded-full border border-[#E2E2DC] bg-white text-[14px]
+          className="flex-1 min-w-[120px] h-11 px-4 rounded-full border border-[#E2E2DC] bg-white text-[14px]
                      text-[#1A1A18] focus:outline-none focus:border-[#E8621A] disabled:opacity-60"
         />
         {/* Location button */}
@@ -520,7 +522,7 @@ export function ChatClient({
           {locationPending ? (
             <span className="w-4 h-4 border-2 border-[#E8621A] border-t-transparent rounded-full animate-spin" />
           ) : (
-            "📍"
+            <Location01Icon size={18} color="currentColor" />
           )}
         </button>
         {/* Image button */}
@@ -534,7 +536,7 @@ export function ChatClient({
           {imageUploading ? (
             <span className="w-4 h-4 border-2 border-[#E8621A] border-t-transparent rounded-full animate-spin" />
           ) : (
-            "📷"
+            <Camera01Icon size={18} color="currentColor" />
           )}
         </button>
         <button
