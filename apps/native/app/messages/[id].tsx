@@ -71,7 +71,7 @@ function LocationBubble({ lat, lng, isMine }: { lat: number; lng: number; isMine
         minWidth: 160,
       }}
     >
-      <Text style={{ fontSize: 22 }}>📍</Text>
+      <HugeiconsIcon icon={Location01Icon} size={22} color={isMine ? colors.primaryForeground : colors.primary} />
       <View style={{ flex: 1 }}>
         <Text
           style={{
@@ -414,9 +414,6 @@ export default function ChatScreen() {
           {/* Input bar */}
           <View
             style={{
-              flexDirection: "row",
-              alignItems: "flex-end",
-              gap: spacing[2],
               paddingHorizontal: spacing[4],
               paddingVertical: spacing[3],
               backgroundColor: colors.surface,
@@ -425,89 +422,107 @@ export default function ChatScreen() {
               paddingBottom: spacing[6],
             }}
           >
-            <TextInput
-              value={text}
-              onChangeText={setText}
-              multiline
-              maxLength={2000}
+            <View
               style={{
-                flex: 1,
-                fontFamily: "DMSans_400Regular",
-                fontSize: 15,
-                color: colors.text,
-                backgroundColor: colors.surface2,
-                borderRadius: radii.xl,
-                borderWidth: 1,
-                borderColor: colors.border,
-                paddingHorizontal: 14,
-                paddingVertical: 10,
-                maxHeight: 100,
+                flexDirection: "row",
+                alignItems: "flex-end",
+                gap: spacing[2],
+                flexWrap: "wrap",
               }}
-              placeholder="Type a message…"
-              placeholderTextColor={colors.textMuted}
-            />
-            <Pressable
-              onPress={() => void handlePickImage()}
-              disabled={sendingImage}
-              style={({ pressed }) => ({
-                width: 44,
-                height: 44,
-                borderRadius: 22,
-                backgroundColor: colors.surface,
-                borderWidth: 1,
-                borderColor: colors.border,
-                alignItems: "center",
-                justifyContent: "center",
-                opacity: pressed || sendingImage ? 0.6 : 1,
-              })}
             >
-              {sendingImage ? (
-                <ActivityIndicator size="small" color={colors.primary} />
-              ) : (
-                <HugeiconsIcon icon={Camera01Icon} size={20} color={colors.primary} />
-              )}
-            </Pressable>
-            <Pressable
-              onPress={() => void handleShareLocation()}
-              disabled={sendingLocation}
-              style={({ pressed }) => ({
-                width: 44,
-                height: 44,
-                borderRadius: 22,
-                backgroundColor: colors.surface,
-                borderWidth: 1,
-                borderColor: colors.border,
-                alignItems: "center",
-                justifyContent: "center",
-                opacity: pressed || sendingLocation ? 0.6 : 1,
-              })}
-            >
-              {sendingLocation ? (
-                <ActivityIndicator size="small" color={colors.primary} />
-              ) : (
-                <HugeiconsIcon icon={Location01Icon} size={20} color={colors.primary} />
-              )}
-            </Pressable>
-            <Pressable
-              onPress={handleSend}
-              disabled={!text.trim() || sending}
-              style={({ pressed }) => ({
-                width: 44,
-                height: 44,
-                borderRadius: 22,
-                backgroundColor:
-                  text.trim() && !sending ? colors.accent : colors.border,
-                alignItems: "center",
-                justifyContent: "center",
-                opacity: pressed ? 0.8 : 1,
-              })}
-            >
-              <HugeiconsIcon
-                icon={SentIcon}
-                size={20}
-                color={text.trim() && !sending ? "#fff" : colors.textMuted}
+              <TextInput
+                value={text}
+                onChangeText={setText}
+                multiline
+                maxLength={2000}
+                style={{
+                  flex: 1,
+                  minWidth: 120,
+                  fontFamily: "DMSans_400Regular",
+                  fontSize: 15,
+                  color: colors.text,
+                  backgroundColor: colors.surface2,
+                  borderRadius: radii.xl,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  paddingHorizontal: 14,
+                  paddingVertical: 10,
+                  maxHeight: 100,
+                }}
+                placeholder="Type a message…"
+                placeholderTextColor={colors.textMuted}
               />
-            </Pressable>
+
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <Pressable
+                  onPress={() => void handlePickImage()}
+                  disabled={sendingImage}
+                  style={({ pressed }) => ({
+                    width: 44,
+                    height: 44,
+                    borderRadius: 22,
+                    backgroundColor: colors.surface,
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    opacity: pressed || sendingImage ? 0.6 : 1,
+                    marginLeft: spacing[2],
+                  })}
+                >
+                  {sendingImage ? (
+                    <ActivityIndicator size="small" color={colors.primary} />
+                  ) : (
+                    <HugeiconsIcon icon={Camera01Icon} size={20} color={colors.primary} />
+                  )}
+                </Pressable>
+
+                <Pressable
+                  onPress={() => void handleShareLocation()}
+                  disabled={sendingLocation}
+                  style={({ pressed }) => ({
+                    width: 44,
+                    height: 44,
+                    borderRadius: 22,
+                    backgroundColor: colors.surface,
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    opacity: pressed || sendingLocation ? 0.6 : 1,
+                    marginLeft: spacing[2],
+                  })}
+                >
+                  {sendingLocation ? (
+                    <ActivityIndicator size="small" color={colors.primary} />
+                  ) : (
+                    <HugeiconsIcon icon={Location01Icon} size={20} color={colors.primary} />
+                  )}
+                </Pressable>
+
+                <Pressable
+                  onPress={handleSend}
+                  disabled={!text.trim() || sending}
+                  style={({ pressed }) => ({
+                    width: 44,
+                    height: 44,
+                    borderRadius: 22,
+                    backgroundColor:
+                      text.trim() && !sending ? colors.accent : colors.border,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    opacity: pressed ? 0.8 : 1,
+                    marginLeft: spacing[2],
+                  })}
+                >
+                  <HugeiconsIcon
+                    icon={SentIcon}
+                    size={20}
+                    color={text.trim() && !sending ? "#fff" : colors.textMuted}
+                  />
+                </Pressable>
+              </View>
+            </View>
           </View>
         </KeyboardAvoidingView>
       )}
